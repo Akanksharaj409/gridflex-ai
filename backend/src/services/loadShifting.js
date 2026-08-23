@@ -1,61 +1,80 @@
 import { FLEXIBLE_LOADS } from '../config/system.js';
-import { importCapAt, tariffAt, hourLabel, clamp, round } from '../utils/calculations.js';
-
-const OVERLOAD_PENALTY = 40; // INR-equivalent per kW over the import cap
+import { importCapAt, tariffAt, hourLabel, round } from '../utils/calculations.js';
 
 /**
- * Cost of parking `powerKw` of load at `hour`, given the current dispatch.
- * Renewable energy that would otherwise be curtailed is free; everything else
- * pays the tariff, plus a steep penalty for pushing past the import cap.
+ * INR-equivalent penalty per kW drawn above the import cap. High enough that
+ * clearing a shortage always beats shaving a few rupees off the energy bill,
+ * which is the right priority order for a reliability product.
  */
-function placementCost(hour, powerKw, row) {
-  const free = clamp((row?.curtailedRenewableKw ?? 0) / powerKw, 0, 1);
-  const billable = powerKw * (1 - free);
-  const exceedance = Math.max(0, (row?.gridImportKw ?? 0) + billable - importCapAt(hour));
-  const alreadyOver = Math.max(0, (row?.gridImportKw ?? 0) - importCapAt(hour));
-  return billable * tariffAt(hour) + (exceedance - alreadyOver) * OVERLOAD_PENALTY;
+export const OVERLOAD_PENALTY = 40;
+
+/** The objective the optimiser minimises: energy cost plus shortage penalty. */
+export function objectiveOf(rows) {
+  let costInr = 0;
+  let shortageKwh = 0;
+  for (const r of rows) {
+    costInr += r.gridImportKw * tariffAt(r.hour);
+    shortageKwh += Math.max(0, r.gridImportKw - importCapAt(r.hour));
+  }
+  return {
+    objective: costInr + shortageKwh * OVERLOAD_PENALTY,
+    costInr: round(costInr, 0),
+    shortageKwh: round(shortageKwh, 1),
+  };
 }
 
-const rowAt = (rows, hour) => rows.find((r) => r.hour === hour);
-
-/** Every legal start hour for a shiftable load. */
-export function feasibleStarts(load) {
+/**
+ * Every legal start hour for a shiftable load.
+ *
+ * `notBefore` matters more than it looks: the optimisation horizon wraps past
+ * midnight, so without it the search happily "moves" the EV to 10:00 - meaning
+ * 10:00 tomorrow - and presents it as a same-day action. Recommendations have
+ * to be executable today or they are fiction.
+ */
+export function feasibleStarts(load, { notBefore = 0 } = {}) {
   const starts = [];
   for (let s = load.earliestHour; s + load.durationHours <= load.latestFinishHour + 1; s += 1) {
-    starts.push(s);
+    if (s >= notBefore) starts.push(s);
   }
   return starts;
 }
 
-function scoreStart(load, start, rows) {
-  let score = 0;
-  for (let i = 0; i < load.durationHours; i += 1) {
-    const hour = (start + i) % 24;
-    score += placementCost(hour, load.powerKw, rowAt(rows, hour));
-  }
-  return score;
-}
-
 /**
- * Propose a better start hour for each shiftable load against the given
- * dispatch. Returns proposals only where the saving clears a threshold - a
- * recommendation that moves someone's EV charging by an hour to save 4 rupees
- * is noise, and operators stop trusting the system that emits it.
+ * Search each shiftable load's legal window for a better start hour.
+ *
+ * Rather than scoring candidate slots with a proxy (tariff, or "is there spare
+ * solar right now"), this re-runs the full battery dispatch for each candidate
+ * and reads the real objective back. A proxy gets this wrong in exactly the
+ * case that matters: when the battery is already soaking up the midday surplus,
+ * a curtailment-based signal reports no spare solar anywhere and the search
+ * degenerates into "pick the earliest cheap hour" in every scenario.
+ *
+ * @param {object} schedule current { loadId: startHour }
+ * @param {(schedule:object) => {objective:number}} evaluate full re-dispatch
+ * @param {{minSaving?:number, currentHour?:number}} opts
  */
-export function proposeShifts(rows, currentSchedule, { minSaving = 25 } = {}) {
+export function proposeShifts(schedule, evaluate, { minSaving = 40, currentHour = 0 } = {}) {
   const proposals = [];
-  const loads = FLEXIBLE_LOADS.filter((l) => l.kind === 'shiftable')
-    .sort((a, b) => b.powerKw * b.durationHours - a.powerKw * a.durationHours);
+  const base = evaluate(schedule);
 
-  for (const load of loads) {
-    const from = currentSchedule?.[load.id] ?? load.defaultStartHour;
-    const currentScore = scoreStart(load, from, rows);
-    let best = { start: from, score: currentScore };
-    for (const s of feasibleStarts(load)) {
-      const score = scoreStart(load, s, rows);
-      if (score < best.score - 0.001) best = { start: s, score };
+  for (const load of FLEXIBLE_LOADS.filter((l) => l.kind === 'shiftable')) {
+    const from = schedule?.[load.id] ?? load.defaultStartHour;
+    // Already under way or finished today - nothing left to move.
+    if (from < currentHour) continue;
+    let best = { start: from, result: base };
+
+    for (const start of feasibleStarts(load, { notBefore: currentHour })) {
+      if (start === from) continue;
+      const result = evaluate({ ...schedule, [load.id]: start });
+      // Tie-break towards the least disruptive move: if two slots score the
+      // same, do not drag someone's EV across the day for nothing.
+      const disruption = Math.abs(start - load.defaultStartHour) * 0.01;
+      if (result.objective + disruption < best.result.objective - 1e-6) {
+        best = { start, result };
+      }
     }
-    const saving = currentScore - best.score;
+
+    const saving = base.objective - best.result.objective;
     if (best.start !== from && saving >= minSaving) {
       proposals.push({
         loadId: load.id,
@@ -70,6 +89,8 @@ export function proposeShifts(rows, currentSchedule, { minSaving = 25 } = {}) {
         toLabel: `${hourLabel(best.start)}-${hourLabel(best.start + load.durationHours)}`,
         energyMovedKwh: round(load.powerKw * load.durationHours, 1),
         estimatedSaving: round(saving, 0),
+        costSavingInr: round(base.costInr - best.result.costInr, 0),
+        shortageClearedKwh: round(base.shortageKwh - best.result.shortageKwh, 1),
         constraint: load.note,
       });
     }
@@ -79,8 +100,8 @@ export function proposeShifts(rows, currentSchedule, { minSaving = 25 } = {}) {
 
 /**
  * Last resort: trim curtailable load in the hours still over the import cap.
- * One percentage per load (that is how a real setpoint command works), sized
- * by the worst hour it can help with.
+ * One percentage per load, because that is how a real setpoint command works,
+ * sized by the worst hour it can help with.
  */
 export function proposeCurtailment(rows) {
   const proposals = [];
@@ -88,7 +109,7 @@ export function proposeCurtailment(rows) {
     let neededKw = 0;
     let worstHour = null;
     for (const hour of load.activeHours) {
-      const row = rowAt(rows, hour);
+      const row = rows.find((r) => r.hour === hour);
       if (!row) continue;
       const exceedance = row.gridImportKw - importCapAt(hour);
       if (exceedance > neededKw) { neededKw = exceedance; worstHour = hour; }

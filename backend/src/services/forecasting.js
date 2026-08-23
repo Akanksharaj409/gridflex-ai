@@ -140,11 +140,17 @@ export function forecastAccuracy() {
   const baseline = learnDemandBaseline(history.filter((r) => r.dayIndex !== lastDay), actualDay[0]?.dayType ?? 'weekday');
   const solarBias = learnSolarBias(history.filter((r) => r.dayIndex !== lastDay));
 
+  // Blur the weather the way a real day-ahead forecast is blurred. Scoring
+  // against observed cloud cover would measure model fit, not forecast skill,
+  // and would report a solar MAPE close to zero - which nobody should believe.
+  const rng = makeRng(31337);
   let demandErr = 0; let demandDen = 0; let solarErr = 0; let solarDen = 0;
   for (const r of actualDay) {
-    const pd = baseline[r.hour] * temperatureFactor(r.tempC);
+    const fcTemp = r.tempC + noise(rng, 1.6);
+    const fcCloud = clamp(r.cloudCover + noise(rng, 0.16), 0, 1);
+    const pd = baseline[r.hour] * temperatureFactor(fcTemp);
     demandErr += Math.abs(pd - r.inflexibleKw); demandDen += r.inflexibleKw;
-    const ps = SOLAR.peakOutputKw * SOLAR_SHAPE[r.hour] * cloudAttenuation(r.cloudCover) * solarBias;
+    const ps = SOLAR.peakOutputKw * SOLAR_SHAPE[r.hour] * cloudAttenuation(fcCloud) * solarBias;
     if (SOLAR_SHAPE[r.hour] > 0.05) { solarErr += Math.abs(ps - r.solarKw); solarDen += r.solarKw; }
   }
   return {
@@ -152,5 +158,6 @@ export function forecastAccuracy() {
     demandMapePct: round(demandDen ? (demandErr / demandDen) * 100 : 0, 2),
     solarMapePct: round(solarDen ? (solarErr / solarDen) * 100 : 0, 2),
     method: 'weather-normalised hour-of-day baseline + clear-sky PV model with bias correction',
+    note: 'Scored day-ahead: the weather input is blurred to match real forecast uncertainty.',
   };
 }

@@ -12,8 +12,8 @@ export const NEIGHBOURHOOD = {
 };
 
 export const SOLAR = {
-  capacityKwp: 320, // community + rooftop PV
-  peakOutputKw: 280, // realistic AC output at STC-ish midday
+  capacityKwp: 560, // ~3.7 kWp per household of rooftop + community PV
+  peakOutputKw: 500, // AC output at midday, after inverter and thermal derating
   sunriseHour: 6,
   sunsetHour: 19,
 };
