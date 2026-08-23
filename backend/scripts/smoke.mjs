@@ -3,7 +3,9 @@
  * invariants that must never break: reserve floor respected, no negative grid
  * import, load constraints honoured, optimisation never worse than doing nothing.
  */
-import { seedHistory, setScenario, setHour, getState, reset } from '../src/data/store.js';
+import {
+  seedHistory, setScenario, setHour, getState, reset, hydrateHistory, hydrateSession,
+} from '../src/data/store.js';
 import { buildPlan } from '../src/services/optimizer.js';
 import { forecastAccuracy } from '../src/services/forecasting.js';
 import { SCENARIOS } from '../src/sim/simulator.js';
@@ -60,6 +62,34 @@ for (const id of Object.keys(SCENARIOS)) {
   }
   console.log('');
 }
+
+// --- Persistence contract: what the Mongo adapter relies on. ---
+console.log('--- storage hydration ---');
+const snapshot = getState().history.slice();
+hydrateHistory(snapshot.map((r) => ({ ...r })));
+check('  history hydrates to the same length', getState().history.length === snapshot.length);
+check('  hydrated readings keep their fields',
+  getState().history[0].solarKw === snapshot[0].solarKw && getState().history[0].hour === snapshot[0].hour);
+
+reset();
+const restored = hydrateSession({
+  scenarioId: 'cloudy-day',
+  currentHour: 19,
+  battery: { socPct: 41 },
+  schedule: { 'ev-fleet': 13 },
+  curtailPct: { 'clubhouse-hvac': 12 },
+  planApplied: true,
+  actionLog: [{ at: 'x', kind: 'apply', summary: 'restored' }],
+});
+check('  session hydration reports success', restored === true);
+check('  scenario restored', getState().scenarioId === 'cloudy-day');
+check('  clock restored', getState().currentHour === 19);
+check('  battery restored', getState().battery.socPct === 41);
+check('  schedule restored', getState().schedule['ev-fleet'] === 13);
+check('  applied flag restored', getState().planApplied === true);
+check('  operator log restored', getState().actionLog.length === 1);
+check('  null session is a no-op', hydrateSession(null) === false);
+console.log('');
 
 console.log(failures ? `${failures} CHECK(S) FAILED` : 'all checks passed');
 process.exit(failures ? 1 : 0);

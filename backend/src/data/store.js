@@ -32,6 +32,40 @@ const state = {
   socTrace: new Array(24).fill(null),
 };
 
+/**
+ * Mutation listeners. Persistence subscribes here rather than being called from
+ * every route, so adding storage does not mean touching the whole API surface.
+ */
+const listeners = new Set();
+export function onMutate(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+function emit(kind) {
+  for (const fn of listeners) {
+    try { fn(kind, state); } catch (err) { console.error('persistence listener failed:', err.message); }
+  }
+}
+
+/** Adopt readings loaded from storage instead of regenerating them. */
+export function hydrateHistory(readings) {
+  state.history = readings;
+  return readings.length;
+}
+
+/** Adopt a persisted session (scenario, clock, battery, schedule). */
+export function hydrateSession(session) {
+  if (!session) return false;
+  if (session.scenarioId) state.scenarioId = session.scenarioId;
+  if (session.currentHour != null) state.currentHour = session.currentHour;
+  if (session.battery) Object.assign(state.battery, session.battery);
+  if (session.schedule) state.schedule = session.schedule;
+  if (session.curtailPct) state.curtailPct = session.curtailPct;
+  if (session.planApplied != null) state.planApplied = session.planApplied;
+  if (session.actionLog) state.actionLog = session.actionLog;
+  return true;
+}
+
 export function seedHistory() {
   const readings = [];
   for (let d = -SIM.historyDays; d < 0; d += 1) {
@@ -54,11 +88,13 @@ export function setScenario(scenarioId) {
   state.planApplied = false;
   state.appliedPlanAt = null;
   state.actionLog = [];
+  emit('scenario');
   return state.scenarioId;
 }
 
 export function setHour(hour) {
   state.currentHour = ((Math.round(hour) % 24) + 24) % 24;
+  emit('hour');
   return state.currentHour;
 }
 
@@ -89,6 +125,7 @@ export function applyPlan({ schedule, curtailPct }) {
   if (curtailPct) state.curtailPct = { ...state.curtailPct, ...curtailPct };
   state.planApplied = true;
   state.appliedPlanAt = new Date().toISOString();
+  emit('apply');
   return { schedule: state.schedule, curtailPct: state.curtailPct };
 }
 
@@ -98,10 +135,12 @@ export function revertPlan() {
   state.planApplied = false;
   state.appliedPlanAt = null;
   state.actionLog = [];
+  emit('revert');
 }
 
 export function setBattery(patch) {
   Object.assign(state.battery, patch);
+  emit('battery');
   return state.battery;
 }
 
@@ -112,6 +151,7 @@ export function setSocTrace(trace) {
 export function logAction(entry) {
   state.actionLog.unshift({ at: new Date().toISOString(), ...entry });
   state.actionLog = state.actionLog.slice(0, 60);
+  emit('log');
   return entry;
 }
 
