@@ -152,7 +152,11 @@ router.get('/discom', (req, res) => {
     batteryAvailableKwh: round(((state.battery.socPct - BATTERY.minReservePct) / 100) * BATTERY.capacityKwh, 1),
     windows: plan.shortagesBefore.windows,
     hours: plan.shortagesAfter.hours,
-    recommendedAction: plan.actions[0]?.title ?? 'No action required',
+    recommendedAction: (
+      plan.actions.find((a) => a.type === 'grid')
+      ?? plan.actions.find((a) => a.type === 'shift' || a.type === 'curtail')
+      ?? plan.actions[0]
+    )?.title ?? 'No action required',
     residualRequestKw: plan.shortagesAfter.peakShortageKw,
   });
 });

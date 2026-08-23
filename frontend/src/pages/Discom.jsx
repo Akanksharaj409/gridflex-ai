@@ -25,7 +25,7 @@ export default function Discom() {
 
       <div className="grid g4">
         <Metric label="Feeder" value={data.feederId} foot={`${data.community} · ${data.households} households`} tone="var(--grid)" />
-        <Metric label="Current load" value={data.currentLoadKw.toFixed(0)} unit="kW" foot={`Firm capacity ${fmt.kw(data.firmCapacityKw)}`} tone="var(--watch)" />
+        <Metric label="Current grid draw" value={data.currentLoadKw.toFixed(0)} unit="kW" foot={`Firm capacity ${fmt.kw(data.firmCapacityKw)}`} tone="var(--watch)" />
         <Metric
           label="Forecast peak"
           value={data.forecastPeakKw.toFixed(0)}

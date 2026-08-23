@@ -118,36 +118,71 @@ export function buildPlan({ horizonHours } = {}) {
   };
 }
 
+/**
+ * Group rows into contiguous runs in *step* order, not hour order.
+ *
+ * The horizon wraps past midnight, so taking the first and last matching hour
+ * and printing them as a range produces nonsense like "14:00-13:00" when the
+ * battery charges this afternoon and again tomorrow morning.
+ */
+function contiguousWindows(rows, predicate) {
+  const windows = [];
+  let open = null;
+  for (const r of rows) {
+    if (predicate(r)) {
+      if (!open) open = { startHour: r.hour, endHour: r.hour, rows: [] };
+      open.endHour = r.hour;
+      open.rows.push(r);
+    } else if (open) {
+      windows.push(open);
+      open = null;
+    }
+  }
+  if (open) windows.push(open);
+  return windows;
+}
+
+/** "14:00-17:00" for one window, "14:00-17:00 and 1 more window" for several. */
+function windowLabel(windows) {
+  if (!windows.length) return '';
+  const [first] = windows;
+  const base = `${hourLabel(first.startHour)}-${hourLabel(first.endHour + 1)}`;
+  if (windows.length === 1) return base;
+  return `${base} and ${windows.length - 1} more window${windows.length > 2 ? 's' : ''}`;
+}
+
 /** Turn the plan into the ordered, human-readable instruction list. */
 function buildActions({ dispatch, netShifts, curtailments, shortagesAfter }) {
   const actions = [];
 
-  const chargeHours = dispatch.rows.filter((r) => r.batteryChargeKw > 1);
-  if (chargeHours.length) {
-    const kwh = round(chargeHours.reduce((a, r) => a + r.batteryChargeKw, 0), 1);
-    const last = chargeHours[chargeHours.length - 1];
+  const chargeWindows = contiguousWindows(dispatch.rows, (r) => r.batteryChargeKw > 1);
+  if (chargeWindows.length) {
+    const kwh = round(
+      chargeWindows.reduce((a, w) => a + w.rows.reduce((b, r) => b + r.batteryChargeKw, 0), 0), 1,
+    );
     actions.push({
       id: 'battery-charge',
       type: 'battery',
       priority: 1,
       title: `Charge battery ${kwh} kWh from surplus solar`,
-      detail: `Absorb surplus across ${hourLabel(chargeHours[0].hour)}-${hourLabel(last.hour + 1)}, which would otherwise be curtailed.`,
-      window: [chargeHours[0].hour, last.hour],
+      detail: `Absorb surplus across ${windowLabel(chargeWindows)}, which would otherwise be curtailed.`,
+      window: [chargeWindows[0].startHour, chargeWindows[0].endHour],
       valueKwh: kwh,
     });
   }
 
-  const dischargeHours = dispatch.rows.filter((r) => r.batteryDischargeKw > 1);
-  if (dischargeHours.length) {
-    const kwh = round(dischargeHours.reduce((a, r) => a + r.batteryDischargeKw, 0), 1);
-    const last = dischargeHours[dischargeHours.length - 1];
+  const dischargeWindows = contiguousWindows(dispatch.rows, (r) => r.batteryDischargeKw > 1);
+  if (dischargeWindows.length) {
+    const kwh = round(
+      dischargeWindows.reduce((a, w) => a + w.rows.reduce((b, r) => b + r.batteryDischargeKw, 0), 0), 1,
+    );
     actions.push({
       id: 'battery-discharge',
       type: 'battery',
       priority: 2,
-      title: `Discharge ${kwh} kWh into the shortage window`,
-      detail: `Hold charge until ${hourLabel(dischargeHours[0].hour)}, then support demand down to the ${dispatch.summary.reserveKwh} kWh reserve floor.`,
-      window: [dischargeHours[0].hour, last.hour],
+      title: `Discharge ${kwh} kWh across ${windowLabel(dischargeWindows)}`,
+      detail: `Hold charge until ${hourLabel(dischargeWindows[0].startHour)}, then support demand down to the ${dispatch.summary.reserveKwh} kWh reserve floor.`,
+      window: [dischargeWindows[0].startHour, dischargeWindows[0].endHour],
       valueKwh: kwh,
     });
   }
@@ -176,7 +211,8 @@ function buildActions({ dispatch, netShifts, curtailments, shortagesAfter }) {
     });
   }
 
-  if (shortagesAfter.peakShortageKw > 0.5) {
+  // Only escalate a residual big enough to be worth a call to the utility.
+  if (shortagesAfter.peakShortageKw >= 5) {
     actions.push({
       id: 'grid-support',
       type: 'grid',
