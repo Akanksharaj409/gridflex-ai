@@ -8,6 +8,7 @@ export const NEIGHBOURHOOD = {
   feederId: 'FDR-01',
   households: 150,
   peakDemandKw: 500, // design peak of the feeder
+  feederCapacityKw: 560, // firm capacity of the 11kV feeder - above this is an overload
 };
 
 export const SOLAR = {
@@ -38,6 +39,17 @@ export const TARIFF = {
   peak: 9.5,
   peakHours: [18, 19, 20, 21],
   offPeakHours: [0, 1, 2, 3, 4, 5, 23],
+};
+
+/**
+ * The community's connection to the DISCOM. `sanctionedLoadKw` is the contract
+ * demand; during the evening peak window the utility restricts imports further,
+ * and anything above that restriction is what we call a shortage.
+ */
+export const GRID = {
+  sanctionedLoadKw: 420,
+  peakWindowCapKw: 340,
+  peakWindowHours: [18, 19, 20, 21],
 };
 
 export const EMISSIONS = {
