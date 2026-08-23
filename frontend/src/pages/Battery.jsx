@@ -1,0 +1,138 @@
+import { api } from '../api';
+import { useEndpoint, useGrid } from '../state';
+import { Badge, Card, Legend, Loading, Metric, StatRow, fmt } from '../components/ui';
+import { ChargeChart, SocChart } from '../components/charts';
+
+const MODE_TONE = { charging: 'watch', discharging: 'normal', idle: 'plain' };
+
+export default function Battery() {
+  const { setBatterySoc } = useGrid();
+  const { data, loading } = useEndpoint(api.battery);
+
+  if (loading && !data) return <Loading what="battery state" />;
+  if (!data) return null;
+
+  const { config, live, summary, schedule } = data;
+  const active = schedule.filter((s) => s.mode !== 'idle');
+
+  return (
+    <>
+      <div className="page-head">
+        <h2>Community battery</h2>
+        <p>
+          {config.capacityKwh} kWh shared storage, dispatched by value rather than chronologically: it charges from
+          any surplus, then spends that energy on the hours where the tariff and the import cap make it worth the
+          most. A {config.minReservePct}% reserve is never crossed.
+        </p>
+      </div>
+
+      <div className="grid g4">
+        <Metric
+          label="State of charge"
+          value={live.socPct.toFixed(0)}
+          unit="%"
+          foot={`${fmt.kwh(live.socKwh)} of ${fmt.kwh(config.capacityKwh)}`}
+          tone="var(--battery)"
+          fill={live.socPct}
+        />
+        <Metric
+          label="Usable now"
+          value={live.usableKwh.toFixed(0)}
+          unit="kWh"
+          foot={`Above the ${fmt.kwh(live.reserveKwh)} reserve floor`}
+          tone="var(--watch)"
+        />
+        <Metric
+          label="Planned throughput"
+          value={summary.chargedKwh.toFixed(0)}
+          unit="kWh in"
+          foot={`${fmt.kwh(summary.dischargedKwh)} out · ${summary.equivalentCycles} equivalent cycles`}
+          tone="var(--solar)"
+        />
+        <Metric
+          label="Power limits"
+          value={config.maxChargeKw}
+          unit="kW"
+          foot={`Charge and discharge · ${(config.roundTripEfficiency * 100).toFixed(0)}% round trip`}
+          tone="var(--grid)"
+        />
+      </div>
+
+      <div className="section-title">Planned state of charge</div>
+      <Card sub="Red line is the reserve floor the dispatcher will not cross">
+        <SocChart data={schedule} reserveKwh={live.reserveKwh} capacityKwh={config.capacityKwh} />
+      </Card>
+
+      <div className="section-title">Charge and discharge schedule</div>
+      <div className="grid g-2-1">
+        <Card sub="Positive is charging from surplus, negative is discharging into demand">
+          <ChargeChart data={schedule} height={240} />
+          <Legend items={[{ label: 'Charging', color: '#4fc3f7' }, { label: 'Discharging', color: '#7ee787' }]} />
+        </Card>
+
+        <div className="grid" style={{ alignContent: 'start' }}>
+          <Card title="Dispatch summary">
+            <StatRow k="Start of horizon" v={`${summary.startSocPct}%`} />
+            <StatRow k="End of horizon" v={`${summary.endSocPct}%`} />
+            <StatRow k="Energy charged" v={fmt.kwh(summary.chargedKwh)} />
+            <StatRow k="Energy discharged" v={fmt.kwh(summary.dischargedKwh)} />
+            <StatRow k="Surplus curtailed" v={fmt.kwh(summary.curtailedKwh)} />
+            <StatRow k="Reserve floor" v={fmt.kwh(summary.reserveKwh)} />
+          </Card>
+
+          <Card title="Set state of charge" sub="Drag to test how the plan changes with more or less stored energy">
+            <input
+              type="range"
+              min={config.minReservePct}
+              max={100}
+              value={live.socPct}
+              onChange={(e) => setBatterySoc(Number(e.target.value))}
+              style={{ width: '100%', accentColor: 'var(--battery)' }}
+            />
+            <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
+              <span className="faint">{config.minReservePct}% reserve</span>
+              <span className="mono">{live.socPct}%</span>
+              <span className="faint">100%</span>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="section-title">Hour by hour</div>
+      <Card className="pad-0">
+        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Hour</th>
+                <th>Mode</th>
+                <th className="num">Charge</th>
+                <th className="num">Discharge</th>
+                <th className="num">State of charge</th>
+                <th className="num">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((s) => (
+                <tr key={s.hour + '-' + s.socKwh}>
+                  <td className="mono">{s.label}</td>
+                  <td><Badge severity={MODE_TONE[s.mode]}>{s.mode}</Badge></td>
+                  <td className="num">{s.chargeKw > 0 ? s.chargeKw.toFixed(0) : '—'}</td>
+                  <td className="num">{s.dischargeKw > 0 ? s.dischargeKw.toFixed(0) : '—'}</td>
+                  <td className="num">{s.socKwh.toFixed(0)}</td>
+                  <td className="num">{s.socPct.toFixed(0)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+      {active.length === 0 && (
+        <p className="faint" style={{ fontSize: 12 }}>
+          The battery is idle across this horizon — there is no surplus to store and no hour where stored energy
+          beats grid energy.
+        </p>
+      )}
+    </>
+  );
+}
