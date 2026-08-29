@@ -1,6 +1,10 @@
 {
   "name": "gridflex-ai",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "version": "0.1.0",
   "description": "Neighbourhood renewable energy reliability platform - forecast, detect shortage, optimize, measure impact",
   "scripts": {
