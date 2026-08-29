@@ -11,6 +11,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "gridflex-ai": "file:.."
+    "gridflex-ai": "file:..",
+    "mongodb": "^6.10.0"
   }
 }
