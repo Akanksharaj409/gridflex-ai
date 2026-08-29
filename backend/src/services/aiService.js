@@ -13,7 +13,7 @@ import { SCENARIOS } from '../sim/simulator.js';
  * the same computed facts and told not to invent any. Same numbers, better prose.
  */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 /** Compact, factual snapshot of the plan - the only thing the LLM may cite. */
 export function planFacts(plan) {
@@ -153,7 +153,7 @@ function explain(question, plan) {
   };
 }
 
-/** Ask Gemini to phrase the answer, constrained to the computed facts. */
+/** Ask Gemini to phrase the answer, constrained to computed facts. */
 async function askGemini(question, plan, groundTruth) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
@@ -173,22 +173,32 @@ async function askGemini(question, plan, groundTruth) {
       role: 'user',
       parts: [{ text: `FACTS:\n${JSON.stringify(groundTruth, null, 1)}\n\nPRE-COMPUTED ANSWER:\n${plan.precomputed}\n\nQUESTION:\n${question}` }],
     }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 400 },
+    generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
   };
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(12000),
-    },
-  );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = await res.json();
-  const text = json?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
-  return text || null;
+  const modelsToTry = Array.from(new Set([DEFAULT_MODEL, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']));
+
+  for (const modelName of modelsToTry) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(5000), // Strict 5s timeout to stay within Vercel's serverless window
+        },
+      );
+      if (!res.ok) continue;
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
+      if (text) return { text, modelUsed: modelName };
+    } catch {
+      // Try next model if timeout or error
+    }
+  }
+
+  return null;
 }
 
 export async function answerQuestion(question, plan) {
@@ -198,10 +208,13 @@ export async function answerQuestion(question, plan) {
   if (!process.env.GEMINI_API_KEY) {
     return { ...grounded, source: 'explainer', model: null };
   }
+
   try {
-    const text = await askGemini(question, { precomputed: grounded.answer }, facts);
-    if (!text) return { ...grounded, source: 'explainer', model: null, note: 'Gemini returned no text' };
-    return { answer: text, citations: grounded.citations, source: 'gemini', model: GEMINI_MODEL };
+    const res = await askGemini(question, { precomputed: grounded.answer }, facts);
+    if (!res || !res.text) {
+      return { ...grounded, source: 'explainer', model: null, note: 'Gemini fallback to ground truth' };
+    }
+    return { answer: res.text, citations: grounded.citations, source: 'gemini', model: res.modelUsed };
   } catch (err) {
     return { ...grounded, source: 'explainer', model: null, note: `Gemini unavailable: ${err.message}` };
   }
