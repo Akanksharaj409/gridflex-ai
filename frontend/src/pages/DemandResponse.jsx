@@ -1,6 +1,7 @@
 import { api } from '../api';
 import { useEndpoint, useGrid } from '../state';
 import { Badge, Card, ICONS, Loading, Metric, fmt } from '../components/ui';
+import { CurtailIcon, DemandResponseIcon, ShiftIcon, SparklesIcon } from '../components/icons';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const pad = (h) => `${String(h).padStart(2, '0')}:00`;
@@ -13,21 +14,22 @@ function TimeStrip({ load }) {
     && Array.from({ length: load.durationHours ?? 1 }, (_, i) => (start + i) % 24).includes(h);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)', gap: 2 }}>
+    <div className="time-strip">
       {HOURS.map((h) => {
         const isCurrent = load.kind === 'shiftable'
           ? covers(from, h)
           : load.activeHours?.includes(h);
         const isTarget = covers(to, h);
-        let bg = '#17222c';
+        let bg = '#162234';
         if (isCurrent && isTarget) bg = 'var(--ok)';
         else if (isTarget) bg = 'var(--ok)';
-        else if (isCurrent) bg = to != null ? '#5c2429' : 'var(--watch)';
+        else if (isCurrent) bg = to != null ? '#ef4444' : 'var(--watch)';
         return (
           <div
             key={h}
+            className="time-strip-cell"
             title={`${pad(h)}${isTarget ? ' — recommended' : isCurrent ? ' — current' : ''}`}
-            style={{ height: 16, borderRadius: 2, background: bg }}
+            style={{ background: bg }}
           />
         );
       })}
@@ -58,18 +60,36 @@ export default function DemandResponse() {
       </div>
 
       <div className="grid g4">
-        <Metric label="Loads moved" value={data.shifts.length} foot={`${fmt.kwh(totalMovedKwh)} shifted out of the peak`} tone="var(--watch)" />
-        <Metric label="Curtailment" value={data.curtailments.length ? fmt.kw(totalReliefKw) : 'None'} foot={data.curtailments.length ? 'Comfort band respected' : 'Not needed under this plan'} tone="var(--warn)" />
-        <Metric label="Flexible capacity" value={fmt.kw(data.loads.reduce((a, l) => a + l.powerKw, 0))} foot={`${data.loads.length} controllable loads enrolled`} tone="var(--grid)" />
+        <Metric
+          label="Loads moved"
+          value={data.shifts.length}
+          foot={`${fmt.kwh(totalMovedKwh)} shifted out of peak`}
+          tone="var(--watch)"
+          icon={<ShiftIcon size={18} color="var(--watch)" />}
+        />
+        <Metric
+          label="Curtailment"
+          value={data.curtailments.length ? fmt.kw(totalReliefKw) : 'None'}
+          foot={data.curtailments.length ? 'Comfort band respected' : 'Not needed under this plan'}
+          tone="var(--warn)"
+          icon={<CurtailIcon size={18} color="var(--warn)" />}
+        />
+        <Metric
+          label="Flexible capacity"
+          value={fmt.kw(data.loads.reduce((a, l) => a + l.powerKw, 0))}
+          foot={`${data.loads.length} controllable loads enrolled`}
+          tone="var(--grid)"
+          icon={<DemandResponseIcon size={18} color="var(--grid)" />}
+        />
         <Metric
           label="Plan status"
           value={sim?.planApplied ? 'Applied' : 'Proposed'}
-          foot={sim?.planApplied ? 'Live schedule follows the optimiser' : 'Review and apply to commit'}
+          foot={sim?.planApplied ? 'Live schedule follows optimiser' : 'Review and apply to commit'}
           tone={sim?.planApplied ? 'var(--ok)' : 'var(--text-dim)'}
         />
       </div>
 
-      <div className="section-title">Flexible loads</div>
+      <div className="section-title">Enrolled Flexible Loads</div>
       <Card className="pad-0">
         <table>
           <thead>
@@ -78,7 +98,7 @@ export default function DemandResponse() {
               <th>Current</th>
               <th>Recommended</th>
               <th className="num">Power</th>
-              <th style={{ width: '32%' }}>Day</th>
+              <th style={{ width: '32%' }}>Day Distribution</th>
             </tr>
           </thead>
           <tbody>
@@ -86,9 +106,9 @@ export default function DemandResponse() {
               <tr key={load.id}>
                 <td>
                   <div className="row">
-                    <span>{ICONS[load.icon] ?? ''}</span>
+                    <span style={{ fontSize: 18 }}>{ICONS[load.icon] ?? ''}</span>
                     <div>
-                      <div style={{ fontWeight: 550 }}>{load.label}</div>
+                      <div style={{ fontWeight: 600 }}>{load.label}</div>
                       <div className="faint" style={{ fontSize: 11.5 }}>{load.note}</div>
                     </div>
                   </div>
@@ -111,28 +131,35 @@ export default function DemandResponse() {
         </table>
       </Card>
 
-      <div className="row" style={{ marginTop: 16 }}>
-        {sim?.planApplied
-          ? <button className="btn danger" onClick={revertPlan}>Revert to un-optimised schedule</button>
-          : (
-            <button className="btn primary" onClick={applyPlan} disabled={!data.shifts.length && !data.curtailments.length}>
-              Apply optimisation
-            </button>
-          )}
-        <span className="faint" style={{ fontSize: 12 }}>
+      <div className="row" style={{ marginTop: 18 }}>
+        {sim?.planApplied ? (
+          <button className="btn danger" onClick={revertPlan}>
+            Revert to un-optimised schedule
+          </button>
+        ) : (
+          <button
+            className="btn primary"
+            onClick={applyPlan}
+            disabled={!data.shifts.length && !data.curtailments.length}
+          >
+            <SparklesIcon size={16} />
+            <span>Apply optimisation</span>
+          </button>
+        )}
+        <span className="faint" style={{ fontSize: 12.5 }}>
           {data.shifts.length || data.curtailments.length
-            ? `${data.shifts.length} shift(s) and ${data.curtailments.length} curtailment(s) will be committed to the live schedule.`
-            : 'Nothing worth changing under the current forecast.'}
+            ? `${data.shifts.length} shift(s) and ${data.curtailments.length} curtailment(s) will be committed to live schedule.`
+            : 'Nothing worth changing under current forecast.'}
         </span>
       </div>
 
-      <div className="section-title">Manual override</div>
+      <div className="section-title">Manual Load Override</div>
       <Card sub="Operators overrule the optimiser sometimes. Set a start hour directly and the plan re-solves around it.">
         <div className="grid g2">
           {shiftable.map((load) => (
-            <div key={load.id}>
-              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13 }}>{ICONS[load.icon]} {load.label}</span>
+            <div key={load.id} style={{ background: 'var(--bg-raised)', padding: 14, borderRadius: 8, border: '1px solid var(--line-soft)' }}>
+              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{ICONS[load.icon]} {load.label}</span>
                 <span className="mono faint" style={{ fontSize: 12 }}>
                   {pad(load.currentStartHour)}–{pad((load.currentStartHour + load.durationHours) % 24)}
                 </span>
@@ -143,9 +170,9 @@ export default function DemandResponse() {
                 max={load.latestFinishHour - load.durationHours + 1}
                 value={load.currentStartHour}
                 onChange={(e) => shiftLoad(load.id, Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--watch)' }}
+                style={{ width: '100%', accentColor: 'var(--watch)', cursor: 'pointer' }}
               />
-              <div className="row" style={{ justifyContent: 'space-between' }}>
+              <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
                 <span className="faint" style={{ fontSize: 11 }}>earliest {pad(load.earliestHour)}</span>
                 <span className="faint" style={{ fontSize: 11 }}>finish by {pad(load.latestFinishHour + 1)}</span>
               </div>
@@ -154,14 +181,14 @@ export default function DemandResponse() {
         </div>
       </Card>
 
-      <div className="section-title">Why these moves</div>
+      <div className="section-title">Optimization Rationale</div>
       <Card>
         {data.shifts.length === 0 && data.curtailments.length === 0 && (
           <div className="muted">The current schedule is already the best one found — no move cleared the saving threshold.</div>
         )}
         {data.shifts.map((s) => (
           <div className="action" key={s.loadId}>
-            <div className="pip">{ICONS.shift}</div>
+            <div className="pip"><ShiftIcon size={16} /></div>
             <div>
               <div className="title">{s.label}: {s.fromLabel} → {s.toLabel}</div>
               <div className="detail">
@@ -174,11 +201,11 @@ export default function DemandResponse() {
         ))}
         {data.curtailments.map((c) => (
           <div className="action" key={c.loadId}>
-            <div className="pip">{ICONS.curtail}</div>
+            <div className="pip"><CurtailIcon size={16} /></div>
             <div>
               <div className="title">{c.label}: reduce {c.curtailPct}%</div>
               <div className="detail">
-                {fmt.kw(c.reliefKw)} of relief, worst hour {c.worstHourLabel}. Capped at the {c.powerKw} kW load&apos;s
+                {fmt.kw(c.reliefKw)} of relief, worst hour {c.worstHourLabel}. Capped at {c.powerKw} kW load&apos;s
                 comfort band. {c.constraint}.
               </div>
             </div>

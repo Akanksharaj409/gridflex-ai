@@ -1,6 +1,27 @@
+import { useState } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useGrid } from './state';
 import { ErrorBanner } from './components/ui';
+import {
+  AlertsIcon,
+  AssistantIcon,
+  BatteryIcon,
+  CheckIcon,
+  ClockIcon,
+  CloseIcon,
+  DashboardIcon,
+  DemandResponseIcon,
+  DiscomIcon,
+  ForecastIcon,
+  ImpactIcon,
+  MenuIcon,
+  NeighbourhoodIcon,
+  PauseIcon,
+  PlayIcon,
+  RefreshIcon,
+  SparklesIcon,
+} from './components/icons';
+
 import Dashboard from './pages/Dashboard';
 import Forecast from './pages/Forecast';
 import Battery from './pages/Battery';
@@ -13,35 +34,54 @@ import Assistant from './pages/Assistant';
 
 const NAV = [
   { group: 'Community' },
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/forecast', label: 'Energy forecast' },
-  { to: '/battery', label: 'Battery' },
-  { to: '/demand-response', label: 'Demand response' },
-  { to: '/neighbourhood', label: 'Neighbourhood' },
+  { to: '/', label: 'Dashboard', end: true, icon: DashboardIcon },
+  { to: '/forecast', label: 'Energy forecast', icon: ForecastIcon },
+  { to: '/battery', label: 'Battery', icon: BatteryIcon },
+  { to: '/demand-response', label: 'Demand response', icon: DemandResponseIcon },
+  { to: '/neighbourhood', label: 'Neighbourhood', icon: NeighbourhoodIcon },
   { group: 'Outcomes' },
-  { to: '/alerts', label: 'Alerts' },
-  { to: '/impact', label: 'Impact & savings' },
+  { to: '/alerts', label: 'Alerts', icon: AlertsIcon },
+  { to: '/impact', label: 'Impact & savings', icon: ImpactIcon },
   { group: 'Utility' },
-  { to: '/discom', label: 'DISCOM feeder view' },
-  { to: '/assistant', label: 'Assistant' },
+  { to: '/discom', label: 'DISCOM feeder view', icon: DiscomIcon },
+  { to: '/assistant', label: 'Assistant', icon: AssistantIcon },
 ];
 
-function TopBar() {
+function TopBar({ onMobileNavToggle }) {
   const {
     sim, setScenario, setHour, advance, applyPlan, revertPlan,
     autoPlay, setAutoPlay, reset,
   } = useGrid();
 
-  if (!sim) return <div className="topbar"><span className="faint">Connecting to the API...</span></div>;
+  if (!sim) {
+    return (
+      <div className="topbar">
+        <span className="faint">Connecting to the API...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="topbar">
-      <div className="clock">
-        {sim.label}
-        <small>simulated clock</small>
+      <button
+        className="mobile-nav-toggle"
+        onClick={onMobileNavToggle}
+        aria-label="Toggle navigation menu"
+      >
+        <MenuIcon size={20} />
+      </button>
+
+      <div className="clock-badge" title="Simulated Clock">
+        <div className="clock-icon-wrapper">
+          <ClockIcon size={18} />
+        </div>
+        <div className="clock-time">
+          {sim.label}
+          <small>simulated clock</small>
+        </div>
       </div>
 
-      <div className="hour-slider">
+      <div className="hour-slider-container">
         <input
           type="range"
           min={0}
@@ -50,60 +90,125 @@ function TopBar() {
           onChange={(e) => setHour(Number(e.target.value))}
           aria-label="Simulated hour"
         />
-        <button className="btn ghost" onClick={() => advance(1)} title="Advance one hour">+1h</button>
+        <span className="hour-slider-val">{String(sim.currentHour).padStart(2, '0')}:00</span>
+        <button
+          className="btn ghost"
+          onClick={() => advance(1)}
+          title="Advance one hour"
+          style={{ padding: '4px 8px', fontSize: '12px' }}
+        >
+          +1h
+        </button>
       </div>
 
-      <select value={sim.scenarioId} onChange={(e) => setScenario(e.target.value)} aria-label="Scenario">
-        {sim.scenarios.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+      <select
+        value={sim.scenarioId}
+        onChange={(e) => setScenario(e.target.value)}
+        aria-label="Scenario"
+      >
+        {sim.scenarios.map((s) => (
+          <option key={s.id} value={s.id}>{s.label}</option>
+        ))}
       </select>
 
-      <button className={`btn ${autoPlay ? '' : 'ghost'}`} onClick={() => setAutoPlay(!autoPlay)}>
-        {autoPlay ? 'Pause' : 'Play'}
+      <button
+        className={`btn ${autoPlay ? 'primary' : 'ghost'}`}
+        onClick={() => setAutoPlay(!autoPlay)}
+        title={autoPlay ? 'Pause simulation' : 'Play simulation'}
+      >
+        {autoPlay ? <PauseIcon size={15} /> : <PlayIcon size={15} />}
+        <span>{autoPlay ? 'Pause' : 'Play'}</span>
       </button>
 
       <div className="spacer" />
 
-      {sim.planApplied
-        ? <button className="btn danger" onClick={revertPlan}>Revert optimisation</button>
-        : <button className="btn primary" onClick={applyPlan}>Apply optimisation</button>}
-      <button className="btn ghost" onClick={reset} title="Reset scenario, clock and battery">Reset</button>
+      {sim.planApplied ? (
+        <button className="btn danger" onClick={revertPlan}>
+          Revert optimisation
+        </button>
+      ) : (
+        <button className="btn primary" onClick={applyPlan}>
+          <SparklesIcon size={15} />
+          <span>Apply optimisation</span>
+        </button>
+      )}
+
+      <button className="btn ghost" onClick={reset} title="Reset scenario, clock and battery">
+        <RefreshIcon size={15} />
+      </button>
     </div>
   );
 }
 
 export default function App() {
   const { error, sim } = useGrid();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      {mobileOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="brand">
-          <div className="name">GridFlex</div>
-          <div className="tag">Neighbourhood energy reliability</div>
+          <div className="brand-icon">
+            <SparklesIcon size={20} color="#ffffff" />
+          </div>
+          <div className="brand-title">
+            <div className="name">
+              GridFlex
+            </div>
+            <div className="tag">Energy Reliability Platform</div>
+          </div>
+          {mobileOpen && (
+            <button
+              style={{ marginLeft: 'auto', color: 'var(--text-dim)' }}
+              onClick={() => setMobileOpen(false)}
+            >
+              <CloseIcon size={20} />
+            </button>
+          )}
         </div>
-        {NAV.map((item) => (item.group
-          ? <div className="nav-group" key={item.group}>{item.group}</div>
-          : (
+
+        {NAV.map((item, idx) => (
+          item.group ? (
+            // eslint-disable-next-line react/no-array-index-key
+            <div className="nav-group" key={idx}>{item.group}</div>
+          ) : (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={() => setMobileOpen(false)}
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >
-              <span className="dot" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && <div className="active-indicator" />}
+                  {item.icon && <item.icon size={18} />}
+                  <span>{item.label}</span>
+                </>
+              )}
             </NavLink>
-          )))}
+          )
+        ))}
+
         <div className="spacer" />
+
         {sim?.planApplied && (
-          <div style={{ padding: '10px', fontSize: 11, color: 'var(--ok)' }}>
-            Optimisation applied
+          <div className="nav-status-card">
+            <CheckIcon size={16} color="var(--ok)" />
+            <span>Optimisation Active</span>
           </div>
         )}
       </aside>
 
       <div className="main">
-        <TopBar />
+        <TopBar onMobileNavToggle={() => setMobileOpen(!mobileOpen)} />
         <div className="content">
           <ErrorBanner message={error} />
           <Routes>

@@ -1,7 +1,17 @@
+import React from 'react';
+import {
+  BatteryIcon,
+  DemandIcon,
+  GridIcon,
+  SolarIcon,
+  WindIcon,
+  WarningIcon,
+} from './icons';
+
 export function Card({ title, sub, right, children, className = '', ...rest }) {
   return (
     <div className={`card ${className}`} {...rest}>
-      {(title || right) && (
+      {(title || right || sub) && (
         <div className="card-head">
           <div>
             {title && <h3>{title}</h3>}
@@ -15,10 +25,24 @@ export function Card({ title, sub, right, children, className = '', ...rest }) {
   );
 }
 
-export function Metric({ label, value, unit, foot, tone, fill }) {
+export function Metric({ label, value, unit, foot, tone, fill, icon }) {
+  // Select matching SVG icon based on label if not explicitly passed
+  let IconComponent = icon;
+  if (!IconComponent) {
+    const l = (label || '').toLowerCase();
+    if (l.includes('renewable') || l.includes('solar')) IconComponent = <SolarIcon size={18} color={tone || 'var(--solar)'} />;
+    else if (l.includes('demand') || l.includes('load')) IconComponent = <DemandIcon size={18} color={tone || 'var(--demand)'} />;
+    else if (l.includes('battery') || l.includes('soc')) IconComponent = <BatteryIcon size={18} color={tone || 'var(--battery)'} />;
+    else if (l.includes('grid') || l.includes('import') || l.includes('feeder')) IconComponent = <GridIcon size={18} color={tone || 'var(--grid)'} />;
+    else if (l.includes('wind')) IconComponent = <WindIcon size={18} color={tone || 'var(--wind)'} />;
+  }
+
   return (
     <div className="card metric">
-      <div className="label">{label}</div>
+      <div className="metric-header">
+        <span className="label">{label}</span>
+        {IconComponent && <div className="metric-icon-box">{IconComponent}</div>}
+      </div>
       <div className="value" style={tone ? { color: tone } : undefined}>
         {value}
         {unit && <span className="unit">{unit}</span>}
@@ -47,19 +71,29 @@ export function StatRow({ k, v }) {
 }
 
 export function Loading({ what = 'data' }) {
-  return <div className="loading">Loading {what}...</div>;
+  return (
+    <div className="loading">
+      <div className="spinner" />
+      <span>Loading {what}...</span>
+    </div>
+  );
 }
 
 export function ErrorBanner({ message }) {
   if (!message) return null;
-  return <div className="error-banner">{message}</div>;
+  return (
+    <div className="error-banner">
+      <WarningIcon size={18} />
+      <span>{message}</span>
+    </div>
+  );
 }
 
 export function Legend({ items }) {
   return (
     <div className="legend">
       {items.map((it) => (
-        <span key={it.label}>
+        <span className="legend-item" key={it.label}>
           <i style={{ background: it.color }} />
           {it.label}
         </span>

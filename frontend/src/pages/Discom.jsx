@@ -1,12 +1,13 @@
 import { api } from '../api';
 import { useEndpoint } from '../state';
 import { Badge, Card, Loading, Metric, StatRow, fmt } from '../components/ui';
+import { DiscomIcon, GridIcon } from '../components/icons';
 import { DispatchChart } from '../components/charts';
 
 export default function Discom() {
   const { data, loading } = useEndpoint(api.discom);
 
-  if (loading && !data) return <Loading what="feeder view" />;
+  if (loading && !data) return <Loading what="utility feeder view" />;
   if (!data) return null;
 
   const utilisation = (data.forecastPeakKw / data.firmCapacityKw) * 100;
@@ -15,17 +16,30 @@ export default function Discom() {
   return (
     <>
       <div className="page-head">
-        <h2>DISCOM feeder view</h2>
+        <h2>DISCOM Feeder View</h2>
         <p>
-          What the utility sees: one feeder, its forecast peak, and how much of that peak the community can take off
+          What the distribution utility sees: one feeder, its forecast peak, and how much of that peak the community can take off
           without the utility building anything. This is the demand-response capacity a distribution planner can
           actually dispatch.
         </p>
       </div>
 
       <div className="grid g4">
-        <Metric label="Feeder" value={data.feederId} foot={`${data.community} · ${data.households} households`} tone="var(--grid)" />
-        <Metric label="Current grid draw" value={data.currentLoadKw.toFixed(0)} unit="kW" foot={`Firm capacity ${fmt.kw(data.firmCapacityKw)}`} tone="var(--watch)" />
+        <Metric
+          label="Feeder ID"
+          value={data.feederId}
+          foot={`${data.community} · ${data.households} households`}
+          tone="var(--grid)"
+          icon={<DiscomIcon size={18} color="var(--grid)" />}
+        />
+        <Metric
+          label="Current grid draw"
+          value={data.currentLoadKw.toFixed(0)}
+          unit="kW"
+          foot={`Firm capacity ${fmt.kw(data.firmCapacityKw)}`}
+          tone="var(--watch)"
+          icon={<GridIcon size={18} color="var(--watch)" />}
+        />
         <Metric
           label="Forecast peak"
           value={data.forecastPeakKw.toFixed(0)}
@@ -44,11 +58,11 @@ export default function Discom() {
         />
       </div>
 
-      <div className="section-title">Feeder status</div>
+      <div className="section-title">Feeder Risk Assessment &amp; Dispatch</div>
       <div className="grid g-1-2">
         <Card
           title="Risk assessment"
-          right={<Badge severity={data.peakRisk === 'normal' ? 'normal' : data.peakRisk}>{data.peakRisk}</Badge>}
+          right={<Badge severity={data.peakRisk === 'normal' ? 'normal' : data.peakRisk}>{data.peakRisk.toUpperCase()}</Badge>}
         >
           <StatRow k="Sanctioned load" v={fmt.kw(data.sanctionedLoadKw)} />
           <StatRow k="Peak-window cap" v={fmt.kw(data.peakWindowCapKw)} />
@@ -56,7 +70,7 @@ export default function Discom() {
           <StatRow k="Demand response available" v={fmt.kw(data.demandResponsePotentialKw)} />
           <StatRow k="Community storage available" v={fmt.kwh(data.batteryAvailableKwh)} />
           <StatRow k="Residual support requested" v={data.residualRequestKw > 0 ? fmt.kw(data.residualRequestKw) : 'None'} />
-          <p style={{ fontSize: 12.5, color: 'var(--text-dim)', margin: '14px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '16px 0 0', lineHeight: 1.5 }}>
             <b style={{ color: 'var(--text)' }}>Recommended:</b> {data.recommendedAction}
           </p>
         </Card>
@@ -77,7 +91,7 @@ export default function Discom() {
         </Card>
       </div>
 
-      <div className="section-title">Constrained hours</div>
+      <div className="section-title">Constrained Hours Detail</div>
       <Card className="pad-0">
         <table>
           <thead>
@@ -101,7 +115,7 @@ export default function Discom() {
                 <td className="num">{h.batteryDischargeKw > 0 ? h.batteryDischargeKw.toFixed(0) : '—'}</td>
                 <td className="num">{h.gridImportKw.toFixed(0)}</td>
                 <td className="num faint">{h.capKw}</td>
-                <td className="num" style={{ color: h.headroomKw < 0 ? 'var(--danger)' : 'var(--text-dim)' }}>
+                <td className="num" style={{ color: h.headroomKw < 0 ? 'var(--danger)' : 'var(--text-dim)', fontWeight: h.headroomKw < 0 ? 600 : 400 }}>
                   {h.headroomKw.toFixed(0)}
                 </td>
                 <td><Badge severity={h.severity}>{h.severity}</Badge></td>
@@ -113,7 +127,7 @@ export default function Discom() {
 
       {data.windows.length > 0 && (
         <>
-          <div className="section-title">Demand-response windows worth calling</div>
+          <div className="section-title">Demand-Response Windows Worth Calling</div>
           <div className="grid g3">
             {data.windows.map((w) => (
               <Card key={w.startHour} title={w.label} right={<Badge severity={w.severity}>{w.severity}</Badge>}>

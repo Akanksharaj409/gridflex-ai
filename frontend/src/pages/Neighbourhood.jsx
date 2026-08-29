@@ -1,6 +1,7 @@
 import { api } from '../api';
 import { useEndpoint } from '../state';
 import { Card, Loading, Metric, fmt } from '../components/ui';
+import { DemandIcon, NeighbourhoodIcon, SolarIcon } from '../components/icons';
 
 const TYPE_COLOR = {
   residential: 'var(--demand)',
@@ -12,7 +13,7 @@ const TYPE_COLOR = {
 export default function Neighbourhood() {
   const { data, loading } = useEndpoint(api.neighbourhood);
 
-  if (loading && !data) return <Loading what="neighbourhood" />;
+  if (loading && !data) return <Loading what="neighbourhood data" />;
   if (!data) return null;
 
   const maxKw = Math.max(...data.units.map((u) => u.loadKw));
@@ -24,7 +25,7 @@ export default function Neighbourhood() {
   return (
     <>
       <div className="page-head">
-        <h2>Neighbourhood</h2>
+        <h2>Neighbourhood Connections</h2>
         <p>
           {data.households} households across eight metered connections at {data.label}. Load is disaggregated from
           the feeder reading using each connection&apos;s share and a diurnal tilt by customer type — commercial
@@ -33,13 +34,40 @@ export default function Neighbourhood() {
       </div>
 
       <div className="grid g4">
-        <Metric label="Total demand" value={data.totalDemandKw.toFixed(0)} unit="kW" foot={`${data.households} households`} tone="var(--demand)" />
-        <Metric label="Local generation" value={(data.solarKw + data.windKw).toFixed(0)} unit="kW" foot={`Solar ${fmt.kw(data.solarKw)} · wind ${fmt.kw(data.windKw)}`} tone="var(--solar)" />
-        <Metric label="Flexible load" value={data.flexibleKw.toFixed(0)} unit="kW" foot={`${((data.flexibleKw / data.totalDemandKw) * 100).toFixed(0)}% of demand is controllable`} tone="var(--watch)" />
-        <Metric label="Inflexible load" value={data.inflexibleKw.toFixed(0)} unit="kW" foot="Lighting, refrigeration, in-home appliances" tone="var(--grid)" />
+        <Metric
+          label="Total demand"
+          value={data.totalDemandKw.toFixed(0)}
+          unit="kW"
+          foot={`${data.households} households enrolled`}
+          tone="var(--demand)"
+          icon={<DemandIcon size={18} color="var(--demand)" />}
+        />
+        <Metric
+          label="Local generation"
+          value={(data.solarKw + data.windKw).toFixed(0)}
+          unit="kW"
+          foot={`Solar ${fmt.kw(data.solarKw)} · wind ${fmt.kw(data.windKw)}`}
+          tone="var(--solar)"
+          icon={<SolarIcon size={18} color="var(--solar)" />}
+        />
+        <Metric
+          label="Flexible load"
+          value={data.flexibleKw.toFixed(0)}
+          unit="kW"
+          foot={`${((data.flexibleKw / data.totalDemandKw) * 100).toFixed(0)}% of demand controllable`}
+          tone="var(--watch)"
+          icon={<NeighbourhoodIcon size={18} color="var(--watch)" />}
+        />
+        <Metric
+          label="Inflexible load"
+          value={data.inflexibleKw.toFixed(0)}
+          unit="kW"
+          foot="Lighting, refrigeration, in-home appliances"
+          tone="var(--grid)"
+        />
       </div>
 
-      <div className="section-title">Metered connections</div>
+      <div className="section-title">Metered Community Connections</div>
       <div className="grid g4">
         {data.units.map((u) => (
           <div className="unit" key={u.id}>
@@ -53,25 +81,26 @@ export default function Neighbourhood() {
         ))}
       </div>
 
-      <div className="section-title">By customer type</div>
+      <div className="section-title">Demand Distribution By Customer Type</div>
       <Card>
         {Object.entries(byType)
           .sort((a, b) => b[1] - a[1])
           .map(([type, kw]) => (
-            <div key={type} style={{ marginBottom: 12 }}>
-              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ textTransform: 'capitalize', fontSize: 13 }}>{type}</span>
+            <div key={type} style={{ marginBottom: 14 }}>
+              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ textTransform: 'capitalize', fontSize: 13.5, fontWeight: 500 }}>{type}</span>
                 <span className="mono" style={{ fontSize: 13 }}>
                   {kw.toFixed(1)} kW
                   <span className="faint"> · {((kw / data.totalDemandKw) * 100).toFixed(0)}%</span>
                 </span>
               </div>
-              <div style={{ height: 6, background: 'var(--line)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ height: 6, background: 'var(--line-soft)', borderRadius: 3, overflow: 'hidden' }}>
                 <span style={{
                   display: 'block',
                   height: '100%',
                   width: `${(kw / data.totalDemandKw) * 100}%`,
                   background: TYPE_COLOR[type],
+                  borderRadius: 3,
                 }}
                 />
               </div>

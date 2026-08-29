@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useEndpoint, useGrid } from '../state';
 import { Badge, Card, Loading } from '../components/ui';
+import { AssistantIcon, SparklesIcon } from '../components/icons';
 
 export default function Assistant() {
   const { sim } = useGrid();
@@ -33,38 +34,38 @@ export default function Assistant() {
     }
   }
 
-  if (!suggestions) return <Loading what="assistant" />;
+  if (!suggestions) return <Loading what="AI assistant" />;
 
   return (
     <>
       <div className="page-head">
-        <h2>Assistant</h2>
+        <h2>GridFlex AI Assistant</h2>
         <p>
-          Answers are computed from the live plan, not generated freehand.
+          Answers are computed directly from the live optimization plan, not generated freehand.
           {suggestions.backend === 'gemini'
-            ? ' Gemini phrases the response, but it is given only the computed facts and told not to invent numbers.'
-            : ' Running on the deterministic explainer — set GEMINI_API_KEY to have Gemini phrase the same facts.'}
+            ? ' Gemini phrases the response using only the computed facts and is instructed never to invent numbers.'
+            : ' Running on deterministic explainer engine — configure GEMINI_API_KEY for LLM natural language responses.'}
         </p>
       </div>
 
-      <div className="row" style={{ marginBottom: 14 }}>
+      <div className="row" style={{ marginBottom: 16 }}>
         <Badge severity={suggestions.backend === 'gemini' ? 'watch' : 'plain'}>
-          {suggestions.backend === 'gemini' ? 'Gemini' : 'Explainer'}
+          {suggestions.backend === 'gemini' ? 'Gemini 1.5 Pro' : 'Explainer Engine'}
         </Badge>
-        <span className="faint" style={{ fontSize: 12 }}>
-          Context: {sim?.scenario?.label} at {sim?.label}
+        <span className="faint" style={{ fontSize: 12.5 }}>
+          Context: <strong>{sim?.scenario?.label}</strong> at <strong>{sim?.label}</strong>
         </span>
         <div className="spacer" />
         <button className="btn ghost" onClick={() => setShowFacts((v) => !v)}>
-          {showFacts ? 'Hide' : 'Show'} the facts it can cite
+          {showFacts ? 'Hide' : 'Show'} Context Facts
         </button>
       </div>
 
       {showFacts && facts && (
-        <Card sub="This is the entire context the assistant is given. Anything not here, it will not claim." className="pad-0" style={{ marginBottom: 16 }}>
+        <Card sub="This is the entire audited context passed to the assistant." className="pad-0" style={{ marginBottom: 18 }}>
           <pre style={{
-            margin: 0, padding: 16, maxHeight: 320, overflow: 'auto',
-            fontSize: 11.5, lineHeight: 1.6, color: 'var(--text-dim)',
+            margin: 0, padding: 18, maxHeight: 300, overflow: 'auto',
+            fontSize: 11.5, lineHeight: 1.6, color: 'var(--text-dim)', background: 'var(--bg-sunken)',
           }}
           >
             {JSON.stringify(facts, null, 2)}
@@ -76,8 +77,12 @@ export default function Assistant() {
         <div className="chat-log">
           {log.length === 0 && (
             <div className="msg bot">
-              Ask me about the forecast, the shortage, the battery, or what to do about any of it.
-              I answer from the plan the optimiser just produced.
+              <div className="row" style={{ marginBottom: 6, color: 'var(--watch)' }}>
+                <AssistantIcon size={18} />
+                <strong style={{ fontSize: 13 }}>GridFlex Assistant Ready</strong>
+              </div>
+              Ask me about the energy forecast, shortage predictions, battery dispatch, or demand response recommendations.
+              I answer strictly from the current optimization plan.
             </div>
           )}
           {log.map((m, i) => (
@@ -92,7 +97,14 @@ export default function Assistant() {
               )}
             </div>
           ))}
-          {busy && <div className="msg bot faint">Thinking...</div>}
+          {busy && (
+            <div className="msg bot faint">
+              <div className="row">
+                <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                <span>Thinking...</span>
+              </div>
+            </div>
+          )}
           <div ref={bottom} />
         </div>
 
@@ -106,7 +118,10 @@ export default function Assistant() {
             placeholder="Why will there be a shortage this evening?"
             disabled={busy}
           />
-          <button className="btn primary" type="submit" disabled={busy || !input.trim()}>Ask</button>
+          <button className="btn primary" type="submit" disabled={busy || !input.trim()}>
+            <SparklesIcon size={16} />
+            <span>Ask</span>
+          </button>
         </form>
 
         <div className="chips">

@@ -1,6 +1,7 @@
 import { api } from '../api';
 import { useEndpoint, useGrid } from '../state';
 import { Badge, Card, Legend, Loading, Metric, StatRow, fmt } from '../components/ui';
+import { BatteryIcon } from '../components/icons';
 import { ChargeChart, SocChart } from '../components/charts';
 
 const MODE_TONE = { charging: 'watch', discharging: 'normal', idle: 'plain' };
@@ -34,6 +35,7 @@ export default function Battery() {
           foot={`${fmt.kwh(live.socKwh)} of ${fmt.kwh(config.capacityKwh)}`}
           tone="var(--battery)"
           fill={live.socPct}
+          icon={<BatteryIcon size={18} color="var(--battery)" />}
         />
         <Metric
           label="Usable now"
@@ -58,16 +60,16 @@ export default function Battery() {
         />
       </div>
 
-      <div className="section-title">Planned state of charge</div>
-      <Card sub="Red line is the reserve floor the dispatcher will not cross">
+      <div className="section-title">Planned State of Charge</div>
+      <Card sub="Red dashed line is the reserve floor the dispatcher will not cross">
         <SocChart data={schedule} reserveKwh={live.reserveKwh} capacityKwh={config.capacityKwh} />
       </Card>
 
-      <div className="section-title">Charge and discharge schedule</div>
+      <div className="section-title">Charge &amp; Discharge Schedule</div>
       <div className="grid g-2-1">
         <Card sub="Positive is charging from surplus, negative is discharging into demand">
           <ChargeChart data={schedule} height={240} />
-          <Legend items={[{ label: 'Charging', color: '#4fc3f7' }, { label: 'Discharging', color: '#7ee787' }]} />
+          <Legend items={[{ label: 'Charging', color: '#38bdf8' }, { label: 'Discharging', color: '#10b981' }]} />
         </Card>
 
         <div className="grid" style={{ alignContent: 'start' }}>
@@ -81,24 +83,26 @@ export default function Battery() {
           </Card>
 
           <Card title="Set state of charge" sub="Drag to test how the plan changes with more or less stored energy">
-            <input
-              type="range"
-              min={config.minReservePct}
-              max={100}
-              value={live.socPct}
-              onChange={(e) => setBatterySoc(Number(e.target.value))}
-              style={{ width: '100%', accentColor: 'var(--battery)' }}
-            />
-            <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
-              <span className="faint">{config.minReservePct}% reserve</span>
-              <span className="mono">{live.socPct}%</span>
-              <span className="faint">100%</span>
+            <div style={{ marginTop: 10 }}>
+              <input
+                type="range"
+                min={config.minReservePct}
+                max={100}
+                value={live.socPct}
+                onChange={(e) => setBatterySoc(Number(e.target.value))}
+                style={{ width: '100%', accentColor: 'var(--battery)', cursor: 'pointer' }}
+              />
+              <div className="row" style={{ justifyContent: 'space-between', fontSize: 12, marginTop: 6 }}>
+                <span className="faint">{config.minReservePct}% reserve</span>
+                <span className="mono" style={{ fontWeight: 600, color: 'var(--battery)' }}>{live.socPct}%</span>
+                <span className="faint">100%</span>
+              </div>
             </div>
           </Card>
         </div>
       </div>
 
-      <div className="section-title">Hour by hour</div>
+      <div className="section-title">Hour by Hour Breakdown</div>
       <Card className="pad-0">
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
           <table>
@@ -128,7 +132,7 @@ export default function Battery() {
         </div>
       </Card>
       {active.length === 0 && (
-        <p className="faint" style={{ fontSize: 12 }}>
+        <p className="faint" style={{ fontSize: 12, marginTop: 12 }}>
           The battery is idle across this horizon — there is no surplus to store and no hour where stored energy
           beats grid energy.
         </p>
