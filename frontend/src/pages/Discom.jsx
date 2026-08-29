@@ -16,7 +16,7 @@ export default function Discom() {
   return (
     <>
       <div className="page-head">
-        <h2>DISCOM Feeder View</h2>
+        <h2>DISCOM Utility Feeder View</h2>
         <p>
           What the distribution utility sees: one feeder, its forecast peak, and how much of that peak the community can take off
           without the utility building anything. This is the demand-response capacity a distribution planner can
@@ -29,23 +29,23 @@ export default function Discom() {
           label="Feeder ID"
           value={data.feederId}
           foot={`${data.community} · ${data.households} households`}
-          tone="var(--grid)"
-          icon={<DiscomIcon size={18} color="var(--grid)" />}
+          tone="var(--accent-grid)"
+          icon={<DiscomIcon size={18} color="var(--accent-grid)" />}
         />
         <Metric
-          label="Current grid draw"
+          label="Current Grid Draw"
           value={data.currentLoadKw.toFixed(0)}
           unit="kW"
           foot={`Firm capacity ${fmt.kw(data.firmCapacityKw)}`}
-          tone="var(--watch)"
-          icon={<GridIcon size={18} color="var(--watch)" />}
+          tone="var(--accent-brand)"
+          icon={<GridIcon size={18} color="var(--accent-brand)" />}
         />
         <Metric
-          label="Forecast peak"
+          label="Forecast Peak"
           value={data.forecastPeakKw.toFixed(0)}
           unit="kW"
           foot={`${utilisation.toFixed(0)}% of firm capacity`}
-          tone={utilisation > 95 ? 'var(--danger)' : utilisation > 80 ? 'var(--warn)' : 'var(--ok)'}
+          tone={utilisation > 95 ? 'var(--accent-danger)' : utilisation > 80 ? 'var(--accent-warn)' : 'var(--accent-battery)'}
           fill={utilisation}
         />
         <Metric
@@ -53,15 +53,15 @@ export default function Discom() {
           value={data.optimisedPeakKw.toFixed(0)}
           unit="kW"
           foot={`${utilisationAfter.toFixed(0)}% of firm capacity`}
-          tone="var(--ok)"
+          tone="var(--accent-battery)"
           fill={utilisationAfter}
         />
       </div>
 
       <div className="section-title">Feeder Risk Assessment &amp; Dispatch</div>
-      <div className="grid g-1-2">
+      <div className="asymmetric-2-1">
         <Card
-          title="Risk assessment"
+          title="Risk Assessment"
           right={<Badge severity={data.peakRisk === 'normal' ? 'normal' : data.peakRisk}>{data.peakRisk.toUpperCase()}</Badge>}
         >
           <StatRow k="Sanctioned load" v={fmt.kw(data.sanctionedLoadKw)} />
@@ -71,7 +71,7 @@ export default function Discom() {
           <StatRow k="Community storage available" v={fmt.kwh(data.batteryAvailableKwh)} />
           <StatRow k="Residual support requested" v={data.residualRequestKw > 0 ? fmt.kw(data.residualRequestKw) : 'None'} />
           <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '16px 0 0', lineHeight: 1.5 }}>
-            <b style={{ color: 'var(--text)' }}>Recommended:</b> {data.recommendedAction}
+            <b style={{ color: 'var(--text-primary)' }}>Recommended Action:</b> {data.recommendedAction}
           </p>
         </Card>
 
@@ -115,7 +115,7 @@ export default function Discom() {
                 <td className="num">{h.batteryDischargeKw > 0 ? h.batteryDischargeKw.toFixed(0) : '—'}</td>
                 <td className="num">{h.gridImportKw.toFixed(0)}</td>
                 <td className="num faint">{h.capKw}</td>
-                <td className="num" style={{ color: h.headroomKw < 0 ? 'var(--danger)' : 'var(--text-dim)', fontWeight: h.headroomKw < 0 ? 600 : 400 }}>
+                <td className="num" style={{ color: h.headroomKw < 0 ? 'var(--accent-danger)' : 'var(--text-dim)', fontWeight: h.headroomKw < 0 ? 700 : 400 }}>
                   {h.headroomKw.toFixed(0)}
                 </td>
                 <td><Badge severity={h.severity}>{h.severity}</Badge></td>

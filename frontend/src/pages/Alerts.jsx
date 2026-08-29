@@ -1,7 +1,7 @@
 import { api } from '../api';
 import { useEndpoint } from '../state';
 import { Badge, Card, Loading, fmt } from '../components/ui';
-import { AlertsIcon, CheckIcon } from '../components/icons';
+import { CheckIcon } from '../components/icons';
 import { ShortageChart } from '../components/charts';
 
 export default function Alerts() {
@@ -17,7 +17,7 @@ export default function Alerts() {
   return (
     <>
       <div className="page-head">
-        <h2>Grid Alerts</h2>
+        <h2>Grid Alerts &amp; Security Signals</h2>
         <p>
           Raised from the forecast, not from what has already gone wrong. An alert marked resolved is one the
           optimisation plan closes — the underlying condition is still forecast, the response covers it.
@@ -30,9 +30,9 @@ export default function Alerts() {
           <Card sub="Red indicates gap without action, green shows what remains after the plan runs">
             <ShortageChart before={shortage.before.hours} after={shortage.after.hours} />
             <div className="row wrap" style={{ marginTop: 14, gap: 24, fontSize: 13 }}>
-              <span className="muted">Peak gap: <b className="mono" style={{ color: 'var(--danger)' }}>{fmt.kw(shortage.before.peakShortageKw)}</b></span>
-              <span className="muted">After plan: <b className="mono" style={{ color: 'var(--ok)' }}>{fmt.kw(shortage.after.peakShortageKw)}</b></span>
-              <span className="muted">Energy cleared: <b className="mono" style={{ color: 'var(--watch)' }}>{fmt.kwh(shortage.cleared.energyKwh)}</b></span>
+              <span className="muted">Peak gap: <b className="mono" style={{ color: 'var(--accent-danger)' }}>{fmt.kw(shortage.before.peakShortageKw)}</b></span>
+              <span className="muted">After plan: <b className="mono" style={{ color: 'var(--accent-battery)' }}>{fmt.kw(shortage.after.peakShortageKw)}</b></span>
+              <span className="muted">Energy cleared: <b className="mono" style={{ color: 'var(--accent-brand)' }}>{fmt.kwh(shortage.cleared.energyKwh)}</b></span>
             </div>
           </Card>
         </>
@@ -42,7 +42,7 @@ export default function Alerts() {
       <div className="grid">
         {open.length === 0 && (
           <Card>
-            <div className="row" style={{ color: 'var(--ok)' }}>
+            <div className="row" style={{ color: 'var(--accent-battery)' }}>
               <CheckIcon size={18} />
               <span>Nothing open. Every forecast condition is covered by the current plan.</span>
             </div>
@@ -54,7 +54,7 @@ export default function Alerts() {
             <div style={{ flex: 1 }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <strong style={{ fontSize: 14 }}>{a.title}</strong>
-                <Badge severity={a.severity}>{a.severity}</Badge>
+                <Badge severity={a.severity}>{a.severity.toUpperCase()}</Badge>
               </div>
               <div className="body">{a.body}</div>
             </div>
@@ -82,7 +82,7 @@ export default function Alerts() {
         </>
       )}
 
-      <div className="section-title">Operator Activity Log</div>
+      <div className="section-title">Operator Audit Activity Log</div>
       <Card className="pad-0">
         {data.log.length === 0 ? (
           <div style={{ padding: 20 }} className="muted">No operator actions yet this session.</div>

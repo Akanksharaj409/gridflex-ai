@@ -28,7 +28,7 @@ export default function Impact() {
   return (
     <>
       <div className="page-head">
-        <h2>Impact &amp; Savings</h2>
+        <h2>GridFlex Impact &amp; Financial Savings</h2>
         <p>
           Everything is measured against a do-nothing baseline over the same 24-hour horizon and the same weather:
           no load shifted, battery idle, every deficit met from the grid. Battery-only is reported separately so
@@ -38,39 +38,39 @@ export default function Impact() {
 
       <div className="grid g4">
         <Metric
-          label="Peak reduction"
+          label="Peak Reduction"
           value={s.peakReductionPct.toFixed(1)}
           unit="%"
           foot={`${fmt.kw(s.peakReductionKw)} off daily peak`}
-          tone="var(--watch)"
-          icon={<ImpactIcon size={18} color="var(--watch)" />}
+          tone="var(--accent-brand)"
+          icon={<ImpactIcon size={18} color="var(--accent-brand)" />}
         />
         <Metric
-          label="Cost saving"
+          label="Cost Savings"
           value={fmt.inr(s.costInr)}
           foot={`${s.costPct.toFixed(1)}% of today's energy bill`}
-          tone="var(--ok)"
+          tone="var(--accent-success)"
         />
         <Metric
-          label="CO₂ avoided"
+          label="CO₂ Avoided"
           value={s.co2AvoidedKg.toFixed(0)}
           unit="kg"
           foot={`${s.co2AvoidedPct.toFixed(1)}% lower emissions`}
-          tone="var(--battery)"
-          icon={<BatteryIcon size={18} color="var(--battery)" />}
+          tone="var(--accent-battery)"
+          icon={<BatteryIcon size={18} color="var(--accent-battery)" />}
         />
         <Metric
-          label="Shortage cleared"
+          label="Shortage Cleared"
           value={s.shortageClearedKwh.toFixed(0)}
           unit="kWh"
           foot="Demand exceeding import cap cleared"
-          tone="var(--solar)"
+          tone="var(--accent-solar)"
         />
       </div>
 
       {dash && (
         <>
-          <div className="section-title">Grid Import: Before vs After</div>
+          <div className="section-title">Grid Import: Before vs After Optimization</div>
           <Card sub="The area is what the community would have drawn; the green line is what it draws under the plan">
             <BeforeAfterChart baseline={dash.baseline} optimised={dash.optimised} height={280} />
           </Card>
@@ -95,10 +95,10 @@ export default function Impact() {
               const better = r.lowerIsBetter ? c < a : c > a;
               return (
                 <tr key={r.key}>
-                  <td style={{ fontWeight: 500 }}>{r.label}</td>
+                  <td style={{ fontWeight: 600 }}>{r.label}</td>
                   <td className="num faint">{r.format(a)}</td>
                   <td className="num muted">{r.format(batteryOnly[r.key])}</td>
-                  <td className="num" style={{ color: better ? 'var(--ok)' : undefined, fontWeight: better ? 600 : 400 }}>
+                  <td className="num" style={{ color: better ? 'var(--accent-battery)' : undefined, fontWeight: better ? 700 : 400 }}>
                     {r.format(c)}
                   </td>
                 </tr>
@@ -109,16 +109,16 @@ export default function Impact() {
       </Card>
 
       <div className="section-title">Annual Projections &amp; Battery Contribution</div>
-      <div className="grid g-2-1">
+      <div className="asymmetric-2-1">
         <Card title="If today repeated for a year" sub="A straight multiplication, not a seasonal model — order of magnitude indicator">
           <div className="grid g3" style={{ marginTop: 12 }}>
-            <Metric label="Annual saving" value={fmt.inr(data.annual.costInr)} foot="At today's tariff" tone="var(--ok)" />
-            <Metric label="Annual CO₂ avoided" value={(data.annual.co2Kg / 1000).toFixed(1)} unit="t" foot={`${data.annual.co2Kg.toLocaleString('en-IN')} kg`} tone="var(--battery)" />
-            <Metric label="Equivalent trees" value={data.annual.treesEquivalent.toLocaleString('en-IN')} foot="At ~21 kg CO₂ / tree / yr" tone="var(--solar)" />
+            <Metric label="Annual saving" value={fmt.inr(data.annual.costInr)} foot="At today's tariff" tone="var(--accent-success)" />
+            <Metric label="Annual CO₂ avoided" value={(data.annual.co2Kg / 1000).toFixed(1)} unit="t" foot={`${data.annual.co2Kg.toLocaleString('en-IN')} kg`} tone="var(--accent-battery)" />
+            <Metric label="Equivalent trees" value={data.annual.treesEquivalent.toLocaleString('en-IN')} foot="At ~21 kg CO₂ / tree / yr" tone="var(--accent-solar)" />
           </div>
         </Card>
 
-        <Card title="Battery contribution">
+        <Card title="Battery Contribution">
           <StatRow k="Charged" v={fmt.kwh(data.battery.chargedKwh)} />
           <StatRow k="Discharged" v={fmt.kwh(data.battery.dischargedKwh)} />
           <StatRow k="Equivalent cycles" v={data.battery.equivalentCycles} />

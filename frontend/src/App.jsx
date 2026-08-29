@@ -9,6 +9,7 @@ import {
   CheckIcon,
   ClockIcon,
   CloseIcon,
+  CpuIcon,
   DashboardIcon,
   DemandResponseIcon,
   DiscomIcon,
@@ -20,6 +21,7 @@ import {
   PlayIcon,
   RefreshIcon,
   SparklesIcon,
+  ZapIcon,
 } from './components/icons';
 
 import Dashboard from './pages/Dashboard';
@@ -33,18 +35,19 @@ import Discom from './pages/Discom';
 import Assistant from './pages/Assistant';
 
 const NAV = [
-  { group: 'Community' },
+  { section: 'OVERVIEW' },
   { to: '/', label: 'Dashboard', end: true, icon: DashboardIcon },
-  { to: '/forecast', label: 'Energy forecast', icon: ForecastIcon },
-  { to: '/battery', label: 'Battery', icon: BatteryIcon },
-  { to: '/demand-response', label: 'Demand response', icon: DemandResponseIcon },
+  { section: 'ENERGY' },
+  { to: '/forecast', label: 'Energy Forecast', icon: ForecastIcon },
+  { to: '/battery', label: 'Battery Dispatch', icon: BatteryIcon },
+  { to: '/demand-response', label: 'Demand Response', icon: DemandResponseIcon },
   { to: '/neighbourhood', label: 'Neighbourhood', icon: NeighbourhoodIcon },
-  { group: 'Outcomes' },
+  { section: 'INSIGHTS' },
   { to: '/alerts', label: 'Alerts', icon: AlertsIcon },
-  { to: '/impact', label: 'Impact & savings', icon: ImpactIcon },
-  { group: 'Utility' },
-  { to: '/discom', label: 'DISCOM feeder view', icon: DiscomIcon },
-  { to: '/assistant', label: 'Assistant', icon: AssistantIcon },
+  { to: '/impact', label: 'Impact & Savings', icon: ImpactIcon },
+  { section: 'UTILITY' },
+  { to: '/discom', label: 'DISCOM Feeder View', icon: DiscomIcon },
+  { to: '/assistant', label: 'AI Assistant', icon: AssistantIcon },
 ];
 
 function TopBar({ onMobileNavToggle }) {
@@ -56,7 +59,7 @@ function TopBar({ onMobileNavToggle }) {
   if (!sim) {
     return (
       <div className="topbar">
-        <span className="faint">Connecting to the API...</span>
+        <span className="faint">Connecting to GridFlex Engine...</span>
       </div>
     );
   }
@@ -71,8 +74,13 @@ function TopBar({ onMobileNavToggle }) {
         <MenuIcon size={20} />
       </button>
 
-      <div className="clock-badge" title="Simulated Clock">
-        <div className="clock-icon-wrapper">
+      <div className="sim-mode-badge" title="Simulated environment - live energy optimization engine">
+        <CpuIcon size={14} color="var(--accent-grid)" />
+        <span>SIMULATION MODE</span>
+      </div>
+
+      <div className="clock-badge" title="Simulated clock position">
+        <div className="clock-icon">
           <ClockIcon size={18} />
         </div>
         <div className="clock-time">
@@ -124,16 +132,16 @@ function TopBar({ onMobileNavToggle }) {
 
       {sim.planApplied ? (
         <button className="btn danger" onClick={revertPlan}>
-          Revert optimisation
+          Revert Optimisation
         </button>
       ) : (
         <button className="btn primary" onClick={applyPlan}>
-          <SparklesIcon size={15} />
-          <span>Apply optimisation</span>
+          <SparklesIcon size={16} />
+          <span>APPLY OPTIMISATION</span>
         </button>
       )}
 
-      <button className="btn ghost" onClick={reset} title="Reset scenario, clock and battery">
+      <button className="btn ghost" onClick={reset} title="Reset scenario, clock & battery">
         <RefreshIcon size={15} />
       </button>
     </div>
@@ -156,13 +164,13 @@ export default function App() {
       <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="brand">
           <div className="brand-icon">
-            <SparklesIcon size={20} color="#ffffff" />
+            <ZapIcon size={22} color="#ffffff" />
           </div>
           <div className="brand-title">
             <div className="name">
               GridFlex
             </div>
-            <div className="tag">Energy Reliability Platform</div>
+            <div className="tag">Energy Intelligence Platform</div>
           </div>
           {mobileOpen && (
             <button
@@ -175,9 +183,9 @@ export default function App() {
         </div>
 
         {NAV.map((item, idx) => (
-          item.group ? (
+          item.section ? (
             // eslint-disable-next-line react/no-array-index-key
-            <div className="nav-group" key={idx}>{item.group}</div>
+            <div className="nav-section-title" key={idx}>{item.section}</div>
           ) : (
             <NavLink
               key={item.to}
@@ -188,7 +196,7 @@ export default function App() {
             >
               {({ isActive }) => (
                 <>
-                  {isActive && <div className="active-indicator" />}
+                  {isActive && <div className="active-glow-bar" />}
                   {item.icon && <item.icon size={18} />}
                   <span>{item.label}</span>
                 </>
@@ -200,8 +208,8 @@ export default function App() {
         <div className="spacer" />
 
         {sim?.planApplied && (
-          <div className="nav-status-card">
-            <CheckIcon size={16} color="var(--ok)" />
+          <div className="nav-status-footer">
+            <CheckIcon size={16} color="var(--accent-battery)" />
             <span>Optimisation Active</span>
           </div>
         )}

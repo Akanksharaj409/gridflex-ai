@@ -19,7 +19,7 @@ export default function Battery() {
   return (
     <>
       <div className="page-head">
-        <h2>Community battery</h2>
+        <h2>Community Battery Storage</h2>
         <p>
           {config.capacityKwh} kWh shared storage, dispatched by value rather than chronologically: it charges from
           any surplus, then spends that energy on the hours where the tariff and the import cap make it worth the
@@ -29,51 +29,51 @@ export default function Battery() {
 
       <div className="grid g4">
         <Metric
-          label="State of charge"
+          label="State of Charge"
           value={live.socPct.toFixed(0)}
           unit="%"
           foot={`${fmt.kwh(live.socKwh)} of ${fmt.kwh(config.capacityKwh)}`}
-          tone="var(--battery)"
+          tone="var(--accent-battery)"
           fill={live.socPct}
-          icon={<BatteryIcon size={18} color="var(--battery)" />}
+          icon={<BatteryIcon size={18} color="var(--accent-battery)" />}
         />
         <Metric
-          label="Usable now"
+          label="Usable Reserve"
           value={live.usableKwh.toFixed(0)}
           unit="kWh"
-          foot={`Above the ${fmt.kwh(live.reserveKwh)} reserve floor`}
-          tone="var(--watch)"
+          foot={`Above ${fmt.kwh(live.reserveKwh)} reserve floor`}
+          tone="var(--accent-brand)"
         />
         <Metric
-          label="Planned throughput"
+          label="Planned Throughput"
           value={summary.chargedKwh.toFixed(0)}
           unit="kWh in"
-          foot={`${fmt.kwh(summary.dischargedKwh)} out · ${summary.equivalentCycles} equivalent cycles`}
-          tone="var(--solar)"
+          foot={`${fmt.kwh(summary.dischargedKwh)} out · ${summary.equivalentCycles} cycles`}
+          tone="var(--accent-solar)"
         />
         <Metric
-          label="Power limits"
+          label="Power Limits"
           value={config.maxChargeKw}
           unit="kW"
-          foot={`Charge and discharge · ${(config.roundTripEfficiency * 100).toFixed(0)}% round trip`}
-          tone="var(--grid)"
+          foot={`Charge & discharge · ${(config.roundTripEfficiency * 100).toFixed(0)}% efficiency`}
+          tone="var(--accent-grid)"
         />
       </div>
 
       <div className="section-title">Planned State of Charge</div>
-      <Card sub="Red dashed line is the reserve floor the dispatcher will not cross">
+      <Card sub="Red dashed line is reserve floor dispatcher will not cross">
         <SocChart data={schedule} reserveKwh={live.reserveKwh} capacityKwh={config.capacityKwh} />
       </Card>
 
-      <div className="section-title">Charge &amp; Discharge Schedule</div>
-      <div className="grid g-2-1">
+      <div className="section-title">Charge &amp; Discharge Dispatch Schedule</div>
+      <div className="asymmetric-2-1">
         <Card sub="Positive is charging from surplus, negative is discharging into demand">
           <ChargeChart data={schedule} height={240} />
           <Legend items={[{ label: 'Charging', color: '#38bdf8' }, { label: 'Discharging', color: '#10b981' }]} />
         </Card>
 
         <div className="grid" style={{ alignContent: 'start' }}>
-          <Card title="Dispatch summary">
+          <Card title="Dispatch Summary">
             <StatRow k="Start of horizon" v={`${summary.startSocPct}%`} />
             <StatRow k="End of horizon" v={`${summary.endSocPct}%`} />
             <StatRow k="Energy charged" v={fmt.kwh(summary.chargedKwh)} />
@@ -82,7 +82,7 @@ export default function Battery() {
             <StatRow k="Reserve floor" v={fmt.kwh(summary.reserveKwh)} />
           </Card>
 
-          <Card title="Set state of charge" sub="Drag to test how the plan changes with more or less stored energy">
+          <Card title="Set State of Charge" sub="Drag to test how the plan changes with more or less stored energy">
             <div style={{ marginTop: 10 }}>
               <input
                 type="range"
@@ -90,11 +90,11 @@ export default function Battery() {
                 max={100}
                 value={live.socPct}
                 onChange={(e) => setBatterySoc(Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--battery)', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: 'var(--accent-battery)', cursor: 'pointer' }}
               />
               <div className="row" style={{ justifyContent: 'space-between', fontSize: 12, marginTop: 6 }}>
                 <span className="faint">{config.minReservePct}% reserve</span>
-                <span className="mono" style={{ fontWeight: 600, color: 'var(--battery)' }}>{live.socPct}%</span>
+                <span className="mono" style={{ fontWeight: 700, color: 'var(--accent-battery)' }}>{live.socPct}%</span>
                 <span className="faint">100%</span>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function Battery() {
                 <th>Mode</th>
                 <th className="num">Charge</th>
                 <th className="num">Discharge</th>
-                <th className="num">State of charge</th>
+                <th className="num">State of Charge</th>
                 <th className="num">%</th>
               </tr>
             </thead>

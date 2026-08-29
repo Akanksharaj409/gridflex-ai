@@ -1,7 +1,7 @@
 import React from 'react';
 
-/** Clean, crisp SVG icons for GridFlex SaaS dashboard */
-export function Icon({ d, children, size = 18, color = 'currentColor', className = '', ...props }) {
+/** High-density SVG icons for Energy Intelligence Platform */
+export function Icon({ size = 18, color = 'currentColor', className = '', children, ...props }) {
   return (
     <svg
       width={size}
@@ -15,7 +15,7 @@ export function Icon({ d, children, size = 18, color = 'currentColor', className
       className={`gfx-icon ${className}`}
       {...props}
     >
-      {d ? <path d={d} /> : children}
+      {children}
     </svg>
   );
 }
@@ -123,6 +123,80 @@ export const GridIcon = (p) => (
   </Icon>
 );
 
+export const ZapIcon = (p) => (
+  <Icon {...p}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </Icon>
+);
+
+export const ShieldCheckIcon = (p) => (
+  <Icon {...p}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="M9 12l2 2 4-4" />
+  </Icon>
+);
+
+export const AlertTriangleIcon = (p) => (
+  <Icon {...p}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </Icon>
+);
+
+export const TrendingUpIcon = (p) => (
+  <Icon {...p}>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </Icon>
+);
+
+export const ArrowRightIcon = (p) => (
+  <Icon {...p}>
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </Icon>
+);
+
+export const ActivityIcon = (p) => (
+  <Icon {...p}>
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+  </Icon>
+);
+
+export const HomeIcon = (p) => (
+  <Icon {...p}>
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </Icon>
+);
+
+export const NetworkIcon = (p) => (
+  <Icon {...p}>
+    <rect x="9" y="2" width="6" height="6" rx="1" />
+    <rect x="2" y="16" width="6" height="6" rx="1" />
+    <rect x="16" y="16" width="6" height="6" rx="1" />
+    <path d="M5 16v-4a2 2 0 012-2h10a2 2 0 012 2v4M12 8v4" />
+  </Icon>
+);
+
+export const SunIcon = SolarIcon;
+
+export const CpuIcon = (p) => (
+  <Icon {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <rect x="9" y="9" width="6" height="6" />
+    <line x1="9" y1="1" x2="9" y2="4" />
+    <line x1="15" y1="1" x2="15" y2="4" />
+    <line x1="9" y1="20" x2="9" y2="23" />
+    <line x1="15" y1="20" x2="15" y2="23" />
+    <line x1="20" y1="9" x2="23" y2="9" />
+    <line x1="20" y1="15" x2="23" y2="15" />
+    <line x1="1" y1="9" x2="4" y2="9" />
+    <line x1="1" y1="15" x2="4" y2="15" />
+  </Icon>
+);
+
 export const EVIcon = (p) => (
   <Icon {...p}>
     <rect x="3" y="11" width="18" height="7" rx="2" />
@@ -201,13 +275,7 @@ export const CheckIcon = (p) => (
   </Icon>
 );
 
-export const WarningIcon = (p) => (
-  <Icon {...p}>
-    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-    <line x1="12" y1="9" x2="12" y2="13" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </Icon>
-);
+export const WarningIcon = AlertTriangleIcon;
 
 export const MenuIcon = (p) => (
   <Icon {...p}>

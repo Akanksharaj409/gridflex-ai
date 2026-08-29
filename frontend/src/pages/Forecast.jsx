@@ -1,7 +1,7 @@
 import { api } from '../api';
 import { useEndpoint } from '../state';
 import { Card, Legend, Loading, Metric, StatRow, fmt } from '../components/ui';
-import { DemandIcon, SolarIcon } from '../components/icons';
+import { DemandIcon, SolarIcon, WindIcon } from '../components/icons';
 import { SupplyDemandChart } from '../components/charts';
 
 export default function Forecast() {
@@ -19,7 +19,7 @@ export default function Forecast() {
   return (
     <>
       <div className="page-head">
-        <h2>Energy forecast</h2>
+        <h2>Energy Forecast Intelligence</h2>
         <p>
           Renewable generation and demand for the next {data.rows.length} hours. Demand is predicted from a
           weather-normalised hour-of-day baseline learned from 14 days of metered history; solar from a clear-sky
@@ -29,34 +29,34 @@ export default function Forecast() {
 
       <div className="grid g4">
         <Metric
-          label="Peak solar"
+          label="Peak Solar"
           value={Math.max(...data.rows.map((r) => r.predictedSolarKw)).toFixed(0)}
           unit="kW"
           foot={`at ${data.rows.reduce((a, b) => (b.predictedSolarKw > a.predictedSolarKw ? b : a)).label}`}
-          tone="var(--solar)"
-          icon={<SolarIcon size={18} color="var(--solar)" />}
+          tone="var(--accent-solar)"
+          icon={<SolarIcon size={18} color="var(--accent-solar)" />}
         />
         <Metric
-          label="Peak demand"
+          label="Peak Demand"
           value={Math.max(...data.rows.map((r) => r.predictedDemandKw)).toFixed(0)}
           unit="kW"
           foot={`at ${data.rows.reduce((a, b) => (b.predictedDemandKw > a.predictedDemandKw ? b : a)).label}`}
-          tone="var(--demand)"
-          icon={<DemandIcon size={18} color="var(--demand)" />}
+          tone="var(--accent-demand)"
+          icon={<DemandIcon size={18} color="var(--accent-demand)" />}
         />
         <Metric
-          label="Surplus window"
+          label="Surplus Window"
           value={bestSurplus ? `+${bestSurplus.netKw.toFixed(0)}` : '0'}
           unit="kW"
           foot={bestSurplus ? `peaks at ${bestSurplus.label} · ${surplus.length}h of surplus` : 'no surplus in horizon'}
-          tone="var(--ok)"
+          tone="var(--accent-battery)"
         />
         <Metric
-          label="Deficit window"
+          label="Deficit Window"
           value={worstDeficit ? worstDeficit.netKw.toFixed(0) : '0'}
           unit="kW"
           foot={worstDeficit ? `worst at ${worstDeficit.label} · ${deficit.length}h of deficit` : 'fully covered'}
-          tone="var(--danger)"
+          tone="var(--accent-danger)"
         />
       </div>
 
@@ -73,7 +73,7 @@ export default function Forecast() {
       </Card>
 
       <div className="section-title">Forecast Detail Table</div>
-      <div className="grid g-2-1">
+      <div className="asymmetric-2-1">
         <Card className="pad-0">
           <div style={{ maxHeight: 460, overflowY: 'auto' }}>
             <table>
@@ -95,7 +95,7 @@ export default function Forecast() {
                     <td className="num">{r.predictedSolarKw.toFixed(0)}</td>
                     <td className="num">{r.predictedWindKw.toFixed(0)}</td>
                     <td className="num">{r.predictedDemandKw.toFixed(0)}</td>
-                    <td className="num" style={{ color: r.netKw >= 0 ? 'var(--ok)' : 'var(--danger)', fontWeight: 600 }}>
+                    <td className="num" style={{ color: r.netKw >= 0 ? 'var(--accent-battery)' : 'var(--accent-danger)', fontWeight: 700 }}>
                       {r.netKw > 0 ? '+' : ''}{r.netKw.toFixed(0)}
                     </td>
                     <td className="num">{r.tempC.toFixed(1)}°</td>
@@ -108,7 +108,7 @@ export default function Forecast() {
         </Card>
 
         <div className="grid" style={{ alignContent: 'start' }}>
-          <Card title="Model skill" sub="Backtested on recent day of history, held out of training">
+          <Card title="Model Skill" sub="Backtested on recent day of history, held out of training">
             <StatRow k="Demand MAPE" v={fmt.pct(data.accuracy.demandMapePct)} />
             <StatRow k="Solar MAPE (daylight)" v={fmt.pct(data.accuracy.solarMapePct)} />
             <StatRow k="Backtest day" v={`D${data.accuracy.backtestDay}`} />
@@ -118,7 +118,7 @@ export default function Forecast() {
           </Card>
 
           {shortage && (
-            <Card title="Predicted shortage windows" sub="Hours where forecast grid import exceeds cap">
+            <Card title="Predicted Shortage Windows" sub="Hours where forecast grid import exceeds cap">
               {shortage.before.windows.length === 0 && <div className="muted">None in this horizon.</div>}
               {shortage.before.windows.map((w) => (
                 <StatRow key={w.startHour} k={w.label} v={`${w.peakShortageKw} kW · ${w.severity}`} />

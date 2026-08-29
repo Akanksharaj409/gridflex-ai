@@ -65,7 +65,7 @@ export default function Assistant() {
         <Card sub="This is the entire audited context passed to the assistant." className="pad-0" style={{ marginBottom: 18 }}>
           <pre style={{
             margin: 0, padding: 18, maxHeight: 300, overflow: 'auto',
-            fontSize: 11.5, lineHeight: 1.6, color: 'var(--text-dim)', background: 'var(--bg-sunken)',
+            fontSize: 11.5, lineHeight: 1.6, color: 'var(--text-dim)', background: 'var(--bg-root)',
           }}
           >
             {JSON.stringify(facts, null, 2)}
@@ -77,9 +77,9 @@ export default function Assistant() {
         <div className="chat-log">
           {log.length === 0 && (
             <div className="msg bot">
-              <div className="row" style={{ marginBottom: 6, color: 'var(--watch)' }}>
+              <div className="row" style={{ marginBottom: 6, color: 'var(--accent-brand)' }}>
                 <AssistantIcon size={18} />
-                <strong style={{ fontSize: 13 }}>GridFlex Assistant Ready</strong>
+                <strong style={{ fontSize: 13 }}>GridFlex Energy Intelligence Assistant</strong>
               </div>
               Ask me about the energy forecast, shortage predictions, battery dispatch, or demand response recommendations.
               I answer strictly from the current optimization plan.
@@ -101,7 +101,7 @@ export default function Assistant() {
             <div className="msg bot faint">
               <div className="row">
                 <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
-                <span>Thinking...</span>
+                <span>Computing response from telemetry...</span>
               </div>
             </div>
           )}

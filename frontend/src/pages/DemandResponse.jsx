@@ -20,10 +20,10 @@ function TimeStrip({ load }) {
           ? covers(from, h)
           : load.activeHours?.includes(h);
         const isTarget = covers(to, h);
-        let bg = '#162234';
-        if (isCurrent && isTarget) bg = 'var(--ok)';
-        else if (isTarget) bg = 'var(--ok)';
-        else if (isCurrent) bg = to != null ? '#ef4444' : 'var(--watch)';
+        let bg = '#142137';
+        if (isCurrent && isTarget) bg = 'var(--accent-battery)';
+        else if (isTarget) bg = 'var(--accent-battery)';
+        else if (isCurrent) bg = to != null ? '#ef4444' : 'var(--accent-brand)';
         return (
           <div
             key={h}
@@ -51,7 +51,7 @@ export default function DemandResponse() {
   return (
     <>
       <div className="page-head">
-        <h2>Demand response</h2>
+        <h2>Demand Response Optimization</h2>
         <p>
           Flexible load is the cheapest lever the community has. Each shiftable load is searched across every legal
           start hour by re-running the full battery dispatch and reading the real objective back — not by a
@@ -61,31 +61,31 @@ export default function DemandResponse() {
 
       <div className="grid g4">
         <Metric
-          label="Loads moved"
+          label="Loads Moved"
           value={data.shifts.length}
           foot={`${fmt.kwh(totalMovedKwh)} shifted out of peak`}
-          tone="var(--watch)"
-          icon={<ShiftIcon size={18} color="var(--watch)" />}
+          tone="var(--accent-brand)"
+          icon={<ShiftIcon size={18} color="var(--accent-brand)" />}
         />
         <Metric
           label="Curtailment"
           value={data.curtailments.length ? fmt.kw(totalReliefKw) : 'None'}
           foot={data.curtailments.length ? 'Comfort band respected' : 'Not needed under this plan'}
-          tone="var(--warn)"
-          icon={<CurtailIcon size={18} color="var(--warn)" />}
+          tone="var(--accent-warn)"
+          icon={<CurtailIcon size={18} color="var(--accent-warn)" />}
         />
         <Metric
-          label="Flexible capacity"
+          label="Flexible Capacity"
           value={fmt.kw(data.loads.reduce((a, l) => a + l.powerKw, 0))}
           foot={`${data.loads.length} controllable loads enrolled`}
-          tone="var(--grid)"
-          icon={<DemandResponseIcon size={18} color="var(--grid)" />}
+          tone="var(--accent-grid)"
+          icon={<DemandResponseIcon size={18} color="var(--accent-grid)" />}
         />
         <Metric
-          label="Plan status"
+          label="Plan Status"
           value={sim?.planApplied ? 'Applied' : 'Proposed'}
           foot={sim?.planApplied ? 'Live schedule follows optimiser' : 'Review and apply to commit'}
-          tone={sim?.planApplied ? 'var(--ok)' : 'var(--text-dim)'}
+          tone={sim?.planApplied ? 'var(--accent-battery)' : 'var(--text-dim)'}
         />
       </div>
 
@@ -108,7 +108,7 @@ export default function DemandResponse() {
                   <div className="row">
                     <span style={{ fontSize: 18 }}>{ICONS[load.icon] ?? ''}</span>
                     <div>
-                      <div style={{ fontWeight: 600 }}>{load.label}</div>
+                      <div style={{ fontWeight: 700 }}>{load.label}</div>
                       <div className="faint" style={{ fontSize: 11.5 }}>{load.note}</div>
                     </div>
                   </div>
@@ -131,10 +131,10 @@ export default function DemandResponse() {
         </table>
       </Card>
 
-      <div className="row" style={{ marginTop: 18 }}>
+      <div className="row" style={{ marginTop: 20 }}>
         {sim?.planApplied ? (
           <button className="btn danger" onClick={revertPlan}>
-            Revert to un-optimised schedule
+            Revert to Un-optimised Schedule
           </button>
         ) : (
           <button
@@ -143,7 +143,7 @@ export default function DemandResponse() {
             disabled={!data.shifts.length && !data.curtailments.length}
           >
             <SparklesIcon size={16} />
-            <span>Apply optimisation</span>
+            <span>APPLY OPTIMISATION</span>
           </button>
         )}
         <span className="faint" style={{ fontSize: 12.5 }}>
@@ -153,13 +153,13 @@ export default function DemandResponse() {
         </span>
       </div>
 
-      <div className="section-title">Manual Load Override</div>
+      <div className="section-title">Manual Load Control Override</div>
       <Card sub="Operators overrule the optimiser sometimes. Set a start hour directly and the plan re-solves around it.">
         <div className="grid g2">
           {shiftable.map((load) => (
-            <div key={load.id} style={{ background: 'var(--bg-raised)', padding: 14, borderRadius: 8, border: '1px solid var(--line-soft)' }}>
+            <div key={load.id} style={{ background: 'var(--bg-surface)', padding: 16, borderRadius: 8, border: '1px solid var(--line-soft)' }}>
               <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600 }}>{ICONS[load.icon]} {load.label}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{ICONS[load.icon]} {load.label}</span>
                 <span className="mono faint" style={{ fontSize: 12 }}>
                   {pad(load.currentStartHour)}–{pad((load.currentStartHour + load.durationHours) % 24)}
                 </span>
@@ -170,7 +170,7 @@ export default function DemandResponse() {
                 max={load.latestFinishHour - load.durationHours + 1}
                 value={load.currentStartHour}
                 onChange={(e) => shiftLoad(load.id, Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--watch)', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: 'var(--accent-brand)', cursor: 'pointer' }}
               />
               <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
                 <span className="faint" style={{ fontSize: 11 }}>earliest {pad(load.earliestHour)}</span>
